@@ -1,7 +1,7 @@
 <section id="explore-section">
         <div class="title-container"><h1>Cities to explore</h1></div>
         <div class="explore-package-card-container">
-            <div class="exlpore-card" <?php echo getLazyBackgroundImage("img/rajshahi.jpg"); ?> style="width: 250px; height: 250px;background-repeat: no-repeat;
+            <div class="exlpore-card lazy-bg" <?php echo getLazyBackgroundImage("img/rajshahi.jpg"); ?> style="width: 250px; height: 250px;background-repeat: no-repeat;
                                       background-size: cover; border-radius: 10px;">
                 <div class="explore-wrapper">
                     <h3>Rajshahi</h3>
@@ -11,7 +11,7 @@
                     </div>
                 </div>
             </div>
-            <div class="exlpore-card" style="background: url(img/jaflong.jpg); width: 250px; height: 250px;background-repeat: no-repeat;
+            <div class="exlpore-card lazy-bg" <?php echo getLazyBackgroundImage("img/jaflong.jpg"); ?> style="width: 250px; height: 250px;background-repeat: no-repeat;
                                       background-size: cover; border-radius: 10px;">
                 <div class="explore-wrapper">
                     <h3>Sylhet</h3>
@@ -21,7 +21,7 @@
                     </div>
                 </div>
             </div>
-            <div class="exlpore-card" style="background: url(img/cox.jpg); width: 250px; height: 250px;background-repeat: no-repeat;
+            <div class="exlpore-card lazy-bg" <?php echo getLazyBackgroundImage("img/cox.jpg"); ?> style="width: 250px; height: 250px;background-repeat: no-repeat;
                                       background-size: cover; border-radius: 10px;">
                 <div class="explore-wrapper">
                     <h3>Cox's Bazar</h3>
@@ -31,7 +31,7 @@
                     </div>
                 </div>
             </div>
-            <div class="exlpore-card" style="background: url(img/ctg.jpg); width: 250px; height: 250px;background-repeat: no-repeat;
+            <div class="exlpore-card lazy-bg" <?php echo getLazyBackgroundImage("img/ctg.jpg"); ?> style="width: 250px; height: 250px;background-repeat: no-repeat;
                                       background-size: cover; border-radius: 10px;">
                 <div class="explore-wrapper">
                     <h3>Chittagong</h3>
