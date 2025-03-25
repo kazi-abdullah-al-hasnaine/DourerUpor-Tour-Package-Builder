@@ -168,9 +168,11 @@
             <hr class="flex-grow-1">
         </div>
         
-          <button class="btn btn-primary w-100" style="background-color: #168C4D;" type="submit">
+        <button  id="google-login-btn" class="btn btn-primary w-100" style="background-color: #168C4D;">
             <i class="fab fa-google me-2"></i> Sign in with Google
         </button>
+        
+        
         
         <!-- Continue as Guest Button -->
         <form action="user-actions.php" method="post" style="margin-top: 15px">
@@ -181,7 +183,10 @@
    
 
     <!-- Custom JS -->
+    <script src="register.js" defer type="module"></script>
     <script>
+       
+
         document.getElementById('toggle-btn').addEventListener('click', function() {
             const loginForm = document.getElementById('login-form');
             const regForm = document.getElementById('registration-form');
