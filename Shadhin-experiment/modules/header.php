@@ -32,7 +32,7 @@
             </nav>
             <div class="hero-body">
                 <div class="hero-body-items">
-                    <h1>Build your path, customize every path <br> and explore the extraordinary</h1>
+                    <h1><?php echo htmlspecialchars_decode($heroTitle); ?></h1>
                     <button class="theme-btn start-exploring-btn">Start exploring</button>
                     
                 </div>
