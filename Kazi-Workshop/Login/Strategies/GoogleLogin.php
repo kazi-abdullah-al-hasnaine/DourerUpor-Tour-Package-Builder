@@ -1,12 +1,8 @@
 <?php
 require_once 'LoginStrategy.php';
 require_once '../db_connection/db.php';
-class GoogleLogin implements LoginStrategy
-{
-    public function login($data)
-    {
-
-
+class GoogleLogin implements LoginStrategy {
+    public function login($data) {
         $db = Database::getInstance();
         $conn = $db->getConnection();
 
@@ -26,8 +22,7 @@ class GoogleLogin implements LoginStrategy
         // Start a session and store the user's email
         session_start();
         $_SESSION['email'] = $email;
-        header("Location: ../home.php");
-        
+        header("Location:../home.php");
+        exit();
     }
 }
-?>

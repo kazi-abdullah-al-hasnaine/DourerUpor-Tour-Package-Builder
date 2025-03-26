@@ -37,8 +37,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             echo "Registration failed!";
         }
     }
-
-    if (isset($_POST["log-out-btn"])) {
+    
+    if (isset($_POST["log-out-btn"])){
         session_unset();
         session_destroy();
         header("Location: login.html");
@@ -46,11 +46,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Handle Google login (data sent via JSON)
     $data = json_decode(file_get_contents("php://input"), true);
     if (isset($data["google-login"])) {
-
         $context->setStrategy(new GoogleLogin());
-
         $context->executeLogin($data);
-
     }
-
+    
 }
