@@ -6,27 +6,19 @@ $conn = $db->getConnection();
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $context = new LoginContext();
 
-    $data = json_decode(file_get_contents("php://input"), true); // Always decode the JSON data
-
-    if (isset($data["login-button"])) {
-        // Normal login (Handle based on your form data)
+    if (isset($_POST["login-button"])) {
+        // Normal login
         $context->setStrategy(new NormalLogin());
-        $context->executeLogin($data);
+        $context->executeLogin($_POST);
     }
 
-    if (isset($data["google-login"])) {
-        // Google login (data sent via JavaScript)
-        $context->setStrategy(new GoogleLogin());
-        $context->executeLogin($data);
-    }
-
-    if (isset($data["registration-button"])) {
-        // Handle registration (this part is the same as before)
-        $name = $data["username"];
-        $email = $data["email"];
-        $password = $data["password"];
-        $dob = $data["dob"];
-        $country = $data["country"];
+    if (isset($_POST["registration-button"])) {
+        // Handle registration
+        $name = $_POST["username"];
+        $email = $_POST["email"];
+        $password = $_POST["password"];
+        $dob = $_POST["dob"];
+        $country = $_POST["country"];
 
         // Insert user into database
         $stmt = $conn->prepare("INSERT INTO user (name, email, password, dob, country) VALUES (:name, :email, :password, :dob, :country)");
@@ -43,5 +35,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
             echo "Registration failed!";
         }
+    }
+
+    // Handle Google login (data sent via JSON)
+    $data = json_decode(file_get_contents("php://input"), true);
+    if (isset($data["google-login"])) {
+        $context->setStrategy(new GoogleLogin());
+        $context->executeLogin($data);
     }
 }
