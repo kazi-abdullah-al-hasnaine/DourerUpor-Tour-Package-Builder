@@ -23,7 +23,33 @@ googleLogin.addEventListener("click", function() {
             const credential = GoogleAuthProvider.credentialFromResult(result);
             const token = credential.accessToken;
             const user = result.user;
+            
+            // Log user data (for debugging purposes)
             console.log("User Info:", user);
+            
+            // Prepare data to send to PHP backend
+            const userData = {
+                "google-login": true,
+                "email": user.email,
+                "name": user.displayName
+            };
+
+            // Send user data to PHP backend (user-actions.php)
+            fetch("user-actions.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json()) // Assuming the server returns JSON
+            .then(data => {
+                console.log("Server Response:", data);
+                // You can handle further actions here (like redirecting or updating UI)
+            })
+            .catch(error => {
+                console.error("Error during fetch:", error);
+            });
         })
         .catch((error) => {
             console.error("Error Code:", error.code);
