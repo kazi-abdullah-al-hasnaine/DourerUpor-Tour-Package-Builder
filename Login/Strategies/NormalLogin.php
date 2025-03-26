@@ -16,7 +16,7 @@ class NormalLogin implements LoginStrategy {
             echo "Login successful!";
             session_start();
             $_SESSION['email'] = $email;
-            header("Location: ../login.html");
+            header("Location: ../index.html");
         } else {
             echo "Invalid credentials!";
         }
