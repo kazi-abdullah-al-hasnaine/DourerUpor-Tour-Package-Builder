@@ -22,7 +22,7 @@ class GoogleLogin implements LoginStrategy {
         // Start a session and store the user's email
         session_start(); // Ensure session is started before accessing session variables
         $_SESSION['email'] = $email;
-        // echo "Google Login successful!";
-        header("Location: ../home.php");
+       echo "Google Login successful!";
+       // header("Location: ../home.php");
     }
 }

@@ -43,4 +43,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $context->setStrategy(new GoogleLogin());
         $context->executeLogin($data);
     }
+    if (isset($_POST["log-out-btn"])){
+        session_unset();
+        session_destroy();
+        header("Location: login.html");
+
+    }
 }
