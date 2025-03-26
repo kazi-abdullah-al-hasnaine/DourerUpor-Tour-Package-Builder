@@ -6,37 +6,30 @@ interface PageComponent {
 
 // Step 2: Concrete Base Page
 class BasePage implements PageComponent {
-    // private $content;
-    private $heroTitle;
+    private $content;
     
-    public function __construct($heroTitle) {
-        // $this->content = $content;
-        $this->heroTitle = $heroTitle;
+    public function __construct($content) {
+        $this->content = $content;
     }
     
     public function render() {
-        $heroTitle = $this->heroTitle;
-        include './modules/header.php';
-        // echo $this->content;
-    }
-    public function getHeroTitle(){
-        return $this->heroTitle;
+        echo $this->content;
     }
 }
 
 // Step 3: Decorators for Common Sections
-// class HeaderDecorator implements PageComponent {
-//     private $page;
+class HeaderDecorator implements PageComponent {
+    private $page;
     
-//     public function __construct(PageComponent $page) {
-//         $this->page = $page;
-//     }
+    public function __construct(PageComponent $page) {
+        $this->page = $page;
+    }
     
-//     public function render() {
-//         include './modules/header.php';
-//         $this->page->render();
-//     }
-// }
+    public function render() {
+        include './modules/header.php';
+        $this->page->render();
+    }
+}
 
 class FooterDecorator implements PageComponent {
     private $page;
@@ -61,9 +54,8 @@ class PopularSection implements PageComponent {
     }
     
     public function render() {
-        $this->page->render();
         include './modules/popular.php';
-        
+        $this->page->render();
     }
 }
 
@@ -75,9 +67,8 @@ class ExploreSection implements PageComponent {
     }
     
     public function render() {
-        $this->page->render();
         include './modules/exploreCities.php';
-        
+        $this->page->render();
     }
 }
 
@@ -89,8 +80,7 @@ class BuildPackagesSection implements PageComponent {
     }
     
     public function render() {
-        $this->page->render();
         include './modules/buildPackages.php';
-        
+        $this->page->render();
     }
 }

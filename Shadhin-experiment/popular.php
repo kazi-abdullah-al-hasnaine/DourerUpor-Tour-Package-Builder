@@ -1,19 +1,22 @@
 <?php
+
+session_start();
+$_SESSION['current-page'] = 'popular';
+
+
 include "decoration.php";
 include "DesignPatterns/pageDecorator.php";
 include "DesignPatterns/imageProxy.php";
-
 // Step 5: Page Implementations
-$popularPage = new BasePage("<p>Popular page Content</p>");
+$popularPage = new BasePage("Explore what's trending now! <br> with DourerUpor!");
 
 
 // Step 6: Wrap Pages with Decorators
 
-$decoratedPopularPage = new HeaderDecorator(
-        new PopularSection(
-            new FooterDecorator($popularPage)
-        )
-);
+$decoratedPopularPage = 
+        new FooterDecorator(
+            new PopularSection($popularPage)
+        );
 
 // Render Pages
 

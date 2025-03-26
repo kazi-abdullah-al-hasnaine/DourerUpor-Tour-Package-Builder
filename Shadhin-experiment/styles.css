@@ -99,6 +99,7 @@ nav ul li a:hover{
   color: var(--primary);
   transition-duration: .3s;
 }
+
 /*----------------Hero section------------------*/
 #hero-section{
   height: 70vh;
@@ -180,7 +181,10 @@ input:focus{
   font-size: 1.3rem;
   background-color: var(--secondary);
 }
-
+/*----------------Wishlist design----------------*/
+#wishlist-container{
+  margin-top: 200px;
+}
 /*----------------Popular section----------------*/
 #popular-section{
   max-width: 1200px;
