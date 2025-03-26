@@ -108,7 +108,7 @@ if(isset($_SESSION['email'])){
                 <div>
                     <?php if (isset($_SESSION['email'])): ?>
                         <form action="./Login/user-actions.php" method="post">
-                            <button class="theme-btn log-out-btn" title="Click to logout" name="log-out-btn"><?php echo $username; ?></button>
+                            <button type ="Submit" class="theme-btn log-out-btn" title="Click to logout" name="log-out-btn"><?php echo $username; ?></button>
                         </form>
                     
                     <?php else: ?>

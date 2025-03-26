@@ -4,6 +4,7 @@ $db = Database::getInstance();
 $conn = $db->getConnection();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    session_start();
     $context = new LoginContext();
 
     if (isset($_POST["login-button"])) {
@@ -36,17 +37,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             echo "Registration failed!";
         }
     }
-
+    
+    if (isset($_POST["log-out-btn"])){
+        session_unset();
+        session_destroy();
+        header("Location: login.html");
+    }
     // Handle Google login (data sent via JSON)
     $data = json_decode(file_get_contents("php://input"), true);
     if (isset($data["google-login"])) {
         $context->setStrategy(new GoogleLogin());
         $context->executeLogin($data);
     }
-    if (isset($_POST["log-out-btn"])){
-        session_unset();
-        session_destroy();
-        header("Location: login.html");
-
-    }
+    
 }
