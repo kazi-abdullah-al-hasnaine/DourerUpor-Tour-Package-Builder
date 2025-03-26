@@ -99,6 +99,7 @@ nav ul li a:hover{
   color: var(--primary);
   transition-duration: .3s;
 }
+
 /*----------------Hero section------------------*/
 #hero-section{
   height: 70vh;

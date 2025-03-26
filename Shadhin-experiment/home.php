@@ -1,4 +1,9 @@
 <?php
+
+session_start();
+$_SESSION['current-page'] = 'home';
+
+
 include "decoration.php";
 include "DesignPatterns/pageDecorator.php";
 include "DesignPatterns/imageProxy.php";

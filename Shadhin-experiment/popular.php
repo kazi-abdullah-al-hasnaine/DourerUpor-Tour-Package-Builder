@@ -1,8 +1,12 @@
 <?php
+
+session_start();
+$_SESSION['current-page'] = 'popular';
+
+
 include "decoration.php";
 include "DesignPatterns/pageDecorator.php";
 include "DesignPatterns/imageProxy.php";
-
 // Step 5: Page Implementations
 $popularPage = new BasePage("Explore what's trending now! <br> with DourerUpor!");
 
