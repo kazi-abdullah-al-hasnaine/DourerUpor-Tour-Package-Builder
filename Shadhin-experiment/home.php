@@ -3,6 +3,8 @@
 session_start();
 $_SESSION['current-page'] = 'home';
 
+// Database connection
+require_once 'db_connection/db.php';
 
 include "decoration.php";
 include "DesignPatterns/pageDecorator.php";

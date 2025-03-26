@@ -3,6 +3,9 @@
 session_start();
 $_SESSION['current-page'] = 'popular';
 
+// Database connection
+require_once 'db_connection/db.php';
+
 
 include "decoration.php";
 include "DesignPatterns/pageDecorator.php";

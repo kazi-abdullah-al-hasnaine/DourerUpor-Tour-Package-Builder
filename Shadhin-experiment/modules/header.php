@@ -1,5 +1,21 @@
 <?php 
+
+
 $active_page = $_SESSION['current-page'];
+
+// Getting username from DB for navigation bar
+if(isset($_SESSION['email'])){
+    $db = Database::getInstance();
+    $conn = $db->getConnection();
+    $email = $_SESSION['email'];
+    $stmt = $conn->prepare("SELECT name FROM user WHERE email = :email");
+    $stmt->execute(['email' => $email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $username = explode(" ", $user['name'])[0];   
+}
+ 
+
+
 ?>
 
 <!DOCTYPE html>
@@ -59,6 +75,17 @@ $active_page = $_SESSION['current-page'];
     background-color: tomato;
     color: white;
 }
+.log-out-btn{
+    color: white;
+    border: 1px solid white;
+    background-color: transparent;
+    transition-duration: .3s;
+}
+.log-out-btn:hover{
+    background-color: white;
+    color: black;
+    transition-duration: .3s;
+}
 
 </style>
 </head>
@@ -79,13 +106,21 @@ $active_page = $_SESSION['current-page'];
                     </ul>
                 </div>
                 <div>
+                    <?php if (isset($_SESSION['email'])): ?>
+                        <form action="./Login/user-actions.php" method="post">
+                            <button class="theme-btn log-out-btn" title="Click to logout" name="log-out-btn"><?php echo $username; ?></button>
+                        </form>
+                    
+                    <?php else: ?>
                     <div class="login-btn-container">
-                        <a href="login/login.html">
+                        <a href="./login/login.html">
                             <button class="login-btn theme-btn">Login</button>
                         </a>
-                        
+                        <a href="./login/login.html">
                         <button class="signup-btn theme-btn">Sign up</button>
+                        </a>
                     </div>
+                    <?php endif ?>
                 </div>
             </nav>
             <div class="hero-body">
@@ -96,7 +131,6 @@ $active_page = $_SESSION['current-page'];
                 </div>
             </div>   
             <div class="hero-search-bar">
-                <form>
                     <div class="search-box-wrapper">
                         <input placeholder="Search your dream destination..." type="text" id="search-box" name="search-box">
                         <button class="search-btn">🔍</button>
