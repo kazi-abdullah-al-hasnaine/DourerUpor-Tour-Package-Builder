@@ -1,29 +1,19 @@
 <?php
-// Database connection
-require_once '../db_connection/db.php';
+require_once 'Strategies/LoginContext.php';
+$db = Database::getInstance();
+$conn = $db->getConnection();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $db = Database::getInstance();
-    $conn = $db->getConnection();
+    $context = new LoginContext();
 
     if (isset($_POST["login-button"])) {
-        $email = $_POST["loginEmail"];
-        $password = $_POST["loginPassword"];
-
-        // Check login credentials
-        $stmt = $conn->prepare("SELECT * FROM user WHERE email = :email AND password = :password");
-        $stmt->execute(['email' => $email, 'password' => $password]);
-
-        if ($stmt->rowCount() > 0) {
-            session_start();
-            $_SESSION['email'] = $email;
-            header("Location: ../home.php");
-        } else {
-            echo "Invalid credentials!";
-        }
+        // Normal login
+        $context->setStrategy(new NormalLogin());
+        $context->executeLogin($_POST);
     }
-    
-    if (isset($_POST["registration-buttom"])) {
+
+    if (isset($_POST["registration-button"])) {
+        // Handle registration
         $name = $_POST["username"];
         $email = $_POST["email"];
         $password = $_POST["password"];
@@ -41,16 +31,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         ]);
 
         if ($success) {
-            header("Location: login.html");
+            echo "Registration successful!";
         } else {
             echo "Registration failed!";
         }
     }
-    if (isset($_POST["log-out-btn"])){
-        session_unset();
-        session_destroy();
-        header("Location: login.html");
 
+    // Handle Google login (data sent via JSON)
+    $data = json_decode(file_get_contents("php://input"), true);
+    if (isset($data["google-login"])) {
+        $context->setStrategy(new GoogleLogin());
+        $context->executeLogin($data);
     }
 }
-?>
