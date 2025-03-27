@@ -48,11 +48,13 @@ googleLogin.addEventListener("click", function() {
                 // You can handle further actions here (like redirecting or updating UI)
             })
             .catch(error => {
-                console.error("Error during fetch:", error);
+                // console.error("Error during fetch:", error);
+                window.location.href = "../home.php";
             });
         })
         .catch((error) => {
-            console.error("Error Code:", error.code);
-            console.error("Error Message:", error.message);
+            // console.error("Error Code:", error.code);
+            // console.error("Error Message:", error.message);
+            window.location.href = "../home.php";
         });
 });

@@ -182,8 +182,66 @@ input:focus{
   background-color: var(--secondary);
 }
 /*----------------Wishlist design----------------*/
+/*----------------Wishlist bar------------------*/
+.wishlist-sidebar {
+    position: fixed;
+    top: 0;
+    right: -700px; /* Initially hidden off-screen */
+    width: 700px;
+    height: 100%;
+    background: white;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+    transition: right 0.3s ease-in-out;
+    padding: 20px;
+    z-index: 1000;
+}
+
+.wishlist-sidebar.active-sidebar {
+    right: 0; /* Slide in */
+}
+
+.close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 50px;
+    cursor: pointer;
+}
 #wishlist-container{
-  margin-top: 200px;
+  margin-top: 50px;
+}
+.wishlist-card{
+    border: 1px solid black;
+    padding: 10px;
+    border-radius: 10px;
+    transition-duration: .3s;
+    margin: 10px 0;
+}
+.wishlist-card:hover{
+    background-color: rgba(0, 0, 0, .1);
+    transform: scale(1.03);
+    transition-duration: .3s;
+}
+.remove-btn{
+    color: tomato;
+    border: 1px solid tomato;
+}
+.remove-btn:hover{
+    background-color: tomato;
+    color: white;
+}
+.log-out-btn{
+    color: white;
+    border: 1px solid white;
+    background-color: transparent;
+    transition-duration: .3s;
+}
+.log-out-btn:hover{
+    background-color: white;
+    color: black;
+    transition-duration: .3s;
 }
 /*----------------Popular section----------------*/
 #popular-section{
@@ -312,6 +370,39 @@ input:focus{
   border: 1px solid transparent;
 }
 
+/*---------------------Build & share section---------------*/
+
+#build-and-share-section{
+  margin: 0 auto;
+/*  margin-top: 100px;*/
+  background-color: var(--primary);
+  height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+#build-and-share-section h1{
+  color: var(--white);
+}
+#build-and-share-section p, #build-and-share-section button{
+  margin-top: 40px;
+  color: var(--white);
+} 
+#build-and-share-section p{
+  font-size: 1.8rem;
+  max-width: 800px;
+  text-align: center;
+}
+#build-and-share-section button{
+  border: 1px solid var(--white);
+  transition-duration: .3s;
+}
+#build-and-share-section button:hover{
+  border: 1px solid transparent;
+  background-color: var(--secondary);
+  transition-duration: .3s;
+}
 
 
 @media only screen and (max-width: 700px) {
