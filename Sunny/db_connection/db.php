@@ -4,22 +4,25 @@ class Database {
     private $conn;
 
     private $host = "localhost";
-    private $db   = "DourerUpor";
+    private $db   = "dourerupor";  // Correct database name here
     private $user = "root";
     private $pass = "";
 
     // Private constructor prevents direct object creation
     private function __construct() {
         try {
+            // Establish a connection to the database
             $this->conn = new PDO("mysql:host=$this->host;dbname=$this->db", $this->user, $this->pass);
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            // echo "Database Connected!<br>";
+            // You can remove this line if you don't want an echo
+            //echo "Database Connected!<br>";  
         } catch (PDOException $e) {
+            // If the connection fails, display an error message
             die("Connection failed: " . $e->getMessage());
         }
     }
 
-    // Static method to get the single instance
+    // Static method to get the single instance (Singleton pattern)
     public static function getInstance() {
         if (self::$instance == null) {
             self::$instance = new Database();
@@ -27,7 +30,7 @@ class Database {
         return self::$instance;
     }
 
-    // Getter for connection
+    // Getter for the connection
     public function getConnection() {
         return $this->conn;
     }
