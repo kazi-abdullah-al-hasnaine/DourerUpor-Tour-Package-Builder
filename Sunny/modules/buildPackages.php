@@ -1,6 +1,9 @@
-<?php 
+<?php
 session_start();
-include_once '../db_connection/db.php';
+
+// Correct the file paths
+include_once('../db_connection/db.php');  // For db.php, assuming it's one level up from modules
+include_once('../DesignPatterns/PackageBuilder.php');  // For PackageBuilder.php, assuming it's in the DesignPatterns folder
 
 // Database connection
 $db = Database::getInstance();
@@ -12,32 +15,41 @@ $stmt = $conn->prepare("SELECT destination_id, name, country, type, cost FROM de
 $stmt->execute();
 $destinations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $packageName = $_POST['package_name'];
     $buildBy = 'User'; // Replace with session user if available
-    
+
+    // Initialize the builder and director
+    $builder = new TourPackageBuilder();
+    $director = new PackageDirector($builder);
+    $director->buildPackage(); // This will add destinations, money saved, day count, etc.
+
+    // Get the constructed package
+    $package = $builder->getPackage();
+
     // Insert into packages table
     $stmt = $conn->prepare("INSERT INTO packages (package_name, publish_time, build_by, status) VALUES (?, NOW(), ?, 'Pending')");
     $stmt->execute([$packageName, $buildBy]);
     $packageId = $conn->lastInsertId();
-    
+
     // Insert selected destinations into package_details
     if (!empty($_POST['destinations'])) {
         $stepNumber = 1;  // Starting step number for each selected destination
-        
         foreach ($_POST['destinations'] as $index => $destinationId) {
-            $moneySaved = $_POST['money_saved'][$index] ?? 0;
-            $dayCount = $_POST['day_count'][$index] ?? 1;
-            $pickup = !empty($_POST['pickup'][$index]) ? $_POST['pickup'][$index] : NULL;
-            $transportType = !empty($_POST['transport_type'][$index]) ? $_POST['transport_type'][$index] : NULL;
-            $cost = $_POST['cost'][$index] ?? 0;
-            
-            $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $moneySaved = $package->moneySaved[$index] ?? 0;
+            $dayCount = $package->dayCount[$index] ?? 1;
+            $pickup = !empty($package->pickup[$index]) ? $package->pickup[$index] : NULL;
+            $transportType = !empty($package->transportType[$index]) ? $package->transportType[$index] : NULL;
+            $cost = $package->cost[$index] ?? 0;
+
+            $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$packageId, $destinationId, $stepNumber, $moneySaved, $dayCount, $pickup, $transportType, $cost]);
             $stepNumber++;  // Increment step number for the next destination
         }
     }
-    
+
     echo "Package successfully created!";
 }
 ?>
@@ -49,107 +61,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Build a Package</title>
     <style>
-        /* General Body Styling */
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-            color: #333;
         }
-
-        /* Container for Form */
-        h1 {
-            text-align: center;
-            color: #4CAF50;
-            padding: 20px 0;
-        }
-
         form {
-            max-width: 800px;
+            width: 50%;
             margin: 0 auto;
-            background-color: #fff;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Package Name Input */
-        input[name="package_name"] {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
             border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
+            border-radius: 5px;
         }
-
-        /* Step Container */
-        #steps-container {
-            margin-top: 20px;
-        }
-
         .step {
             margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: #fafafa;
         }
-
-        .step input, .step select {
+        input, select {
             width: 100%;
-            padding: 8px;
-            margin: 8px 0;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
             border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
         }
-
-        /* Button Styling */
-        button[type="button"], button[type="submit"] {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #4CAF50;
+        button {
+            background-color: #28a745;
             color: white;
+            padding: 10px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
-            margin-top: 10px;
         }
-
-        button[type="button"]:hover, button[type="submit"]:hover {
-            background-color: #45a049;
-        }
-
-        /* Remove Button (For Step) */
-        button[type="button"] {
-            background-color: #f44336;
-        }
-
-        button[type="button"]:hover {
-            background-color: #e53935;
-        }
-
-        /* Responsive Styling for Small Screens */
-        @media screen and (max-width: 600px) {
-            form {
-                padding: 15px;
-            }
-
-            .step input, .step select {
-                width: 100%;
-            }
-
-            button[type="button"], button[type="submit"] {
-                width: 100%;
-                padding: 12px;
-            }
+        button:disabled {
+            background-color: #ccc;
         }
     </style>
     <script>
         let destinationsData = <?php echo json_encode($destinations); ?>;
-        
+
         function addStep() {
             let stepsContainer = document.getElementById("steps-container");
             let stepHtml = `
@@ -162,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <input type="text" name="destination_name[]" placeholder="Destination Name" readonly>
                     <input type="text" name="country[]" placeholder="Country" readonly>
                     <input type="text" name="type[]" placeholder="Type" readonly>
                     <input type="number" name="cost[]" placeholder="Cost" readonly>
@@ -178,6 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function populateFields(selectElement) {
             let selectedOption = selectElement.options[selectElement.selectedIndex];
             let stepDiv = selectElement.parentElement;
+            stepDiv.querySelector("input[name='destination_name[]']").value = selectedOption.getAttribute("data-name");
             stepDiv.querySelector("input[name='country[]']").value = selectedOption.getAttribute("data-country");
             stepDiv.querySelector("input[name='type[]']").value = selectedOption.getAttribute("data-type");
             stepDiv.querySelector("input[name='cost[]']").value = selectedOption.getAttribute("data-cost");
