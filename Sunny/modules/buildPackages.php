@@ -20,8 +20,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $packageName = $_POST['package_name'];
     $buildBy = 'User'; // Replace with session user if available
 
+    // Convert selected destination IDs into full details
+    $selectedDestinations = [];
+    if (!empty($_POST['destinations'])) {
+        $placeholders = implode(',', array_fill(0, count($_POST['destinations']), '?'));
+        $stmt = $conn->prepare("SELECT * FROM destinations WHERE destination_id IN ($placeholders)");
+        $stmt->execute($_POST['destinations']);
+        $selectedDestinations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     // Initialize the builder and director
-    $builder = new TourPackageBuilder();
+    $builder = new TourPackageBuilder($selectedDestinations);
     $director = new PackageDirector($builder);
     $director->buildPackage(); // This will add destinations, money saved, day count, etc.
 
@@ -36,16 +45,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Insert selected destinations into package_details
     if (!empty($_POST['destinations'])) {
         $stepNumber = 1;  // Starting step number for each selected destination
-        foreach ($_POST['destinations'] as $index => $destinationId) {
-            $moneySaved = $package->moneySaved[$index] ?? 0;
-            $dayCount = $package->dayCount[$index] ?? 1;
-            $pickup = !empty($package->pickup[$index]) ? $package->pickup[$index] : NULL;
-            $transportType = !empty($package->transportType[$index]) ? $package->transportType[$index] : NULL;
-            $cost = $package->cost[$index] ?? 0;
+        foreach ($selectedDestinations as $index => $destination) {
+            // Get user input for money_saved, day_count, pickup, transport_type, and cost
+            $moneySaved = $_POST['money_saved'][$index] ?? 0;
+            $dayCount = $_POST['day_count'][$index] ?? 1;
+            $pickup = !empty($_POST['pickup'][$index]) ? $_POST['pickup'][$index] : NULL;
+            $transportType = !empty($_POST['transport_type'][$index]) ? $_POST['transport_type'][$index] : NULL;
+            $cost = $_POST['cost'][$index] ?? 0;
 
+            // Insert the data into the package_details table
             $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$packageId, $destinationId, $stepNumber, $moneySaved, $dayCount, $pickup, $transportType, $cost]);
+            $stmt->execute([$packageId, $destination['destination_id'], $stepNumber, $moneySaved, $dayCount, $pickup, $transportType, $cost]);
             $stepNumber++;  // Increment step number for the next destination
         }
     }

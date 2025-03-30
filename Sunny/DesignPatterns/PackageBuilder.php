@@ -38,36 +38,57 @@ class Package
 // Concrete Builder for Tour Package
 class TourPackageBuilder extends PackageBuilder
 {
+    private $selectedDestinations;
+
+    public function __construct($selectedDestinations)
+    {
+        parent::__construct();
+        $this->selectedDestinations = $selectedDestinations;
+    }
+
     public function addDestinations()
     {
-        $this->package->destinations[] = "Bangladesh";  // Example destination
+        foreach ($this->selectedDestinations as $destination) {
+            $this->package->destinations[] = $destination['name'];
+        }
     }
 
     public function addMoneySaved()
     {
-        $this->package->moneySaved[] = 1000;  // Example money saved
+        foreach ($this->selectedDestinations as $destination) {
+            $this->package->moneySaved[] = 1000; // Example money saved, can be adjusted
+        }
     }
 
     public function addDayCount()
     {
-        $this->package->dayCount[] = 7;  // Example days count
+        foreach ($this->selectedDestinations as $destination) {
+            $this->package->dayCount[] = 7; // Default days count
+        }
     }
 
     public function addPickup()
     {
-        $this->package->pickup[] = "Hotel Pickup";  // Example pickup
+        foreach ($this->selectedDestinations as $destination) {
+            $this->package->pickup[] = "Hotel Pickup"; // Example pickup, can be dynamic
+        }
     }
 
     public function addTransportType()
     {
-        $this->package->transportType[] = "Bus";  // Example transport type
+        foreach ($this->selectedDestinations as $destination) {
+            $this->package->transportType[] = "Bus"; // Example transport type
+        }
     }
 
     public function addCost()
     {
-        $this->package->cost[] = 5000;  // Example cost
+        foreach ($this->selectedDestinations as $destination) {
+            $this->package->cost[] = $destination['cost']; // Use the actual cost from the database
+        }
     }
 }
+
 
 // Director Class
 class PackageDirector
