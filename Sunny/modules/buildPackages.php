@@ -1,9 +1,7 @@
 <?php
 session_start();
-
-// Correct the file paths
-include_once('../db_connection/db.php');  // For db.php, assuming it's one level up from modules
-include_once('../DesignPatterns/PackageBuilder.php');  // For PackageBuilder.php, assuming it's in the DesignPatterns folder
+include_once('../db_connection/db.php');
+include_once('../DesignPatterns/PackageBuilder.php');
 
 // Database connection
 $db = Database::getInstance();
@@ -32,7 +30,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Initialize the builder and director
     $builder = new TourPackageBuilder($selectedDestinations);
     $director = new PackageDirector($builder);
-    $director->buildPackage(); // This will add destinations, money saved, day count, etc.
+
+    // Loop through each destination and pass the user input to the builder
+    foreach ($_POST['destinations'] as $index => $destinationId) {
+        // Get user input for each destination
+        $moneySaved = $_POST['money_saved'][$index] ?? 0;
+        $dayCount = $_POST['day_count'][$index] ?? 1;
+        
+        // Set pickup and transport_type to NULL if not provided
+        $pickup = !empty($_POST['pickup'][$index]) ? $_POST['pickup'][$index] : NULL;
+        $transportType = !empty($_POST['transport_type'][$index]) ? $_POST['transport_type'][$index] : NULL;
+        
+        $cost = $_POST['cost'][$index] ?? 0;
+
+        // Build the package with the dynamic values
+        $director->buildPackage($moneySaved, $dayCount, $pickup, $transportType, $cost);
+    }
 
     // Get the constructed package
     $package = $builder->getPackage();
@@ -43,22 +56,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $packageId = $conn->lastInsertId();
 
     // Insert selected destinations into package_details
-    if (!empty($_POST['destinations'])) {
-        $stepNumber = 1;  // Starting step number for each selected destination
-        foreach ($selectedDestinations as $index => $destination) {
-            // Get user input for money_saved, day_count, pickup, transport_type, and cost
-            $moneySaved = $_POST['money_saved'][$index] ?? 0;
-            $dayCount = $_POST['day_count'][$index] ?? 1;
-            $pickup = !empty($_POST['pickup'][$index]) ? $_POST['pickup'][$index] : NULL;
-            $transportType = !empty($_POST['transport_type'][$index]) ? $_POST['transport_type'][$index] : NULL;
-            $cost = $_POST['cost'][$index] ?? 0;
+    $stepNumber = 1;
+    foreach ($selectedDestinations as $index => $destination) {
+        // Explicitly check for NULL values for pickup and transport_type
+        $pickup = $_POST['pickup'][$index] ?? NULL;
+        $transportType = $_POST['transport_type'][$index] ?? NULL;
+        $moneySaved = $_POST['money_saved'][$index] ?? 0;
+        $dayCount = $_POST['day_count'][$index] ?? 1;
+        $cost = $_POST['cost'][$index] ?? 0;
 
-            // Insert the data into the package_details table
-            $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$packageId, $destination['destination_id'], $stepNumber, $moneySaved, $dayCount, $pickup, $transportType, $cost]);
-            $stepNumber++;  // Increment step number for the next destination
-        }
+        // SQL insert statement with NULL support for pickup and transport_type
+        $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$packageId, $destination['destination_id'], $stepNumber, $moneySaved, $dayCount, $pickup, $transportType, $cost]);
+        $stepNumber++;
     }
 
     echo "Package successfully created!";

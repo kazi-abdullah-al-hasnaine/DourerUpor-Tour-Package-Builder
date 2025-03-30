@@ -12,11 +12,11 @@ abstract class PackageBuilder
     }
 
     abstract public function addDestinations();
-    abstract public function addMoneySaved();
-    abstract public function addDayCount();
-    abstract public function addPickup();
-    abstract public function addTransportType();
-    abstract public function addCost();
+    abstract public function addMoneySaved($moneySaved);
+    abstract public function addDayCount($dayCount);
+    abstract public function addPickup($pickup);
+    abstract public function addTransportType($transportType);
+    abstract public function addCost($cost);
 
     public function getPackage()
     {
@@ -53,39 +53,34 @@ class TourPackageBuilder extends PackageBuilder
         }
     }
 
-    public function addMoneySaved()
+    public function addMoneySaved($moneySaved)
     {
-        foreach ($this->selectedDestinations as $destination) {
-            $this->package->moneySaved[] = 1000; // Example money saved, can be adjusted
-        }
+        // Add the dynamically received money saved value to the package
+        $this->package->moneySaved[] = $moneySaved;
     }
 
-    public function addDayCount()
+    public function addDayCount($dayCount)
     {
-        foreach ($this->selectedDestinations as $destination) {
-            $this->package->dayCount[] = 7; // Default days count
-        }
+        // Add the dynamically received day count value to the package
+        $this->package->dayCount[] = $dayCount;
     }
 
-    public function addPickup()
+    public function addPickup($pickup)
     {
-        foreach ($this->selectedDestinations as $destination) {
-            $this->package->pickup[] = "Hotel Pickup"; // Example pickup, can be dynamic
-        }
+        // Add the dynamically received pickup value to the package
+        $this->package->pickup[] = $pickup;
     }
 
-    public function addTransportType()
+    public function addTransportType($transportType)
     {
-        foreach ($this->selectedDestinations as $destination) {
-            $this->package->transportType[] = "Bus"; // Example transport type
-        }
+        // Add the dynamically received transport type value to the package
+        $this->package->transportType[] = $transportType;
     }
 
-    public function addCost()
+    public function addCost($cost)
     {
-        foreach ($this->selectedDestinations as $destination) {
-            $this->package->cost[] = $destination['cost']; // Use the actual cost from the database
-        }
+        // Add the dynamically received cost value to the package
+        $this->package->cost[] = $cost;
     }
 }
 
@@ -100,14 +95,16 @@ class PackageDirector
         $this->builder = $builder;
     }
 
-    public function buildPackage()
+    public function buildPackage($moneySaved, $dayCount, $pickup, $transportType, $cost)
     {
         $this->builder->addDestinations();
-        $this->builder->addMoneySaved();
-        $this->builder->addDayCount();
-        $this->builder->addPickup();
-        $this->builder->addTransportType();
-        $this->builder->addCost();
+        
+        // Pass dynamic values to builder methods
+        $this->builder->addMoneySaved($moneySaved);
+        $this->builder->addDayCount($dayCount);
+        $this->builder->addPickup($pickup);
+        $this->builder->addTransportType($transportType);
+        $this->builder->addCost($cost);
     }
 }
 ?>
