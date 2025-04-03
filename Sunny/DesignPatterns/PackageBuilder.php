@@ -17,6 +17,8 @@ abstract class PackageBuilder
     abstract public function addPickup($pickup);
     abstract public function addTransportType($transportType);
     abstract public function addCost($cost);
+    abstract public function addDetails($details);
+    abstract public function addImage($image);
 
     public function getPackage()
     {
@@ -33,6 +35,8 @@ class Package
     public $pickup = [];
     public $transportType = [];
     public $cost = [];
+    public $details;
+    public $image;
 }
 
 // Concrete Builder for Tour Package
@@ -55,35 +59,39 @@ class TourPackageBuilder extends PackageBuilder
 
     public function addMoneySaved($moneySaved)
     {
-        // Add the dynamically received money saved value to the package
         $this->package->moneySaved[] = $moneySaved;
     }
 
     public function addDayCount($dayCount)
     {
-        // Add the dynamically received day count value to the package
         $this->package->dayCount[] = $dayCount;
     }
 
     public function addPickup($pickup)
     {
-        // Add the dynamically received pickup value to the package
         $this->package->pickup[] = $pickup;
     }
 
     public function addTransportType($transportType)
     {
-        // Add the dynamically received transport type value to the package
         $this->package->transportType[] = $transportType;
     }
 
     public function addCost($cost)
     {
-        // Add the dynamically received cost value to the package
         $this->package->cost[] = $cost;
     }
-}
 
+    public function addDetails($details)
+    {
+        $this->package->details = $details;
+    }
+
+    public function addImage($image)
+    {
+        $this->package->image = $image;
+    }
+}
 
 // Director Class
 class PackageDirector
@@ -95,16 +103,16 @@ class PackageDirector
         $this->builder = $builder;
     }
 
-    public function buildPackage($moneySaved, $dayCount, $pickup, $transportType, $cost)
+    public function buildPackage($moneySaved, $dayCount, $pickup, $transportType, $cost, $details, $image)
     {
         $this->builder->addDestinations();
-        
-        // Pass dynamic values to builder methods
         $this->builder->addMoneySaved($moneySaved);
         $this->builder->addDayCount($dayCount);
         $this->builder->addPickup($pickup);
         $this->builder->addTransportType($transportType);
         $this->builder->addCost($cost);
+        $this->builder->addDetails($details);
+        $this->builder->addImage($image);
     }
 }
 ?>
