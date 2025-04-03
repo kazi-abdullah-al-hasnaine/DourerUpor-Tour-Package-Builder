@@ -52,11 +52,13 @@ googleLogin.addEventListener("click", function () {
                 .catch(error => {
                     console.error("Error during fetch:", error);
                     window.location.href = "../home.php";
+                    // Handle error 
                 });
         })
         .catch((error) => {
             console.error("Error Code:", error.code);
             console.error("Error Message:", error.message);
             window.location.href = "../home.php";
+            //handle error
         });
 });
