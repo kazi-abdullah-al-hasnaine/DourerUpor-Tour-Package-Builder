@@ -1,7 +1,7 @@
 <?php
 
 session_start();
-$_SESSION['current-page'] = 'popular';
+$_SESSION['current-page'] = 'explore';
 
 // Database connection
 require_once 'db_connection/db.php';
@@ -11,16 +11,16 @@ include "decoration.php";
 include "DesignPatterns/pageDecorator.php";
 include "DesignPatterns/imageProxy.php";
 // Step 5: Page Implementations
-$popularPage = new BasePage("Explore what's trending now! <br> with DourerUpor!");
+$explorePage = new BasePage("Find your next destination <br> with DourerUpor!");
 
 
 // Step 6: Wrap Pages with Decorators
 
-$decoratedPopularPage =
+$decoratedExplorePage =
     new FooterDecorator(
-        new PopularSection($popularPage)
+        new ExploreSection($explorePage, 12, "main-content")
     );
 
 // Render Pages
 
-$decoratedPopularPage->render();
+$decoratedExplorePage->render();

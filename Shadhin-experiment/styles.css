@@ -307,13 +307,23 @@ input:focus{
 #explore-section{
 /*  max-width: 1200px;*/
   margin: 0 auto;
-  margin-top: 100px;
+  /* margin-top: 100px; */
+  /* padding-top: 130px; */
   background-color: var(--secondary);
-  height: 60vh;
+  /* height: 60vh; */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+.small-section{
+  margin-top: 100px;
+  height: 60vh;
+}
+.large-section{
+  padding-top: 130px;
+  padding-bottom: 50px;
+  height: content-fit;
 }
 .explore-package-card-container{
   display: flex;
@@ -335,13 +345,22 @@ input:focus{
   align-items: center;
 }
 .exlpore-card{
-  height: 250px;
-  width: 250px;
+  /* height: 250px;
+  width: 250px; */
   background-color: var(--blue);
   border-radius: 10px;
   margin: 0 10px;
   color: white;
   transition-duration: .3s;
+}
+.small-card{
+  height: 250px;
+  width: 250px;
+}
+.large-card{
+  height: 250px;
+  width: 1200px;
+  margin-top: 30px
 }
 .exlpore-card:hover{
   transform: scale(1.1);

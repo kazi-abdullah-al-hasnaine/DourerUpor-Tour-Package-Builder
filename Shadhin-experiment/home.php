@@ -14,14 +14,15 @@ and explore the extraordinary");
 
 // Step 6: Wrap Pages with Decorators
 $decoratedHomePage = new FooterDecorator(
-            new BuildPackagesSection(
-                new ExploreSection(
-                    new PopularSection($homePage)
-                )
-            )
-        );
+    new BuildPackagesSection(
+        new ExploreSection(
+            new PopularSection($homePage),
+            4,
+            "section"
+        )
+    )
+);
 
 
 // Render Pages
 $decoratedHomePage->render();
-?>
