@@ -13,9 +13,6 @@
   box-sizing: border-box;
   font-family: sans-serif;
 }
-body{
-/*  padding: 0 20px;*/
-}
 
 /*----------Navigation bar style----------------*/
 
@@ -225,12 +222,14 @@ input:focus{
     transition-duration: .3s;
 }
 .remove-btn{
-    color: tomato;
-    border: 1px solid tomato;
+    color: rgb(255, 255, 255);
+    background-color: var(--black);
+    border: 1px solid var(--black);
+    padding: 5px 15px;
 }
 .remove-btn:hover{
-    background-color: tomato;
-    color: white;
+    background-color: transparent;
+    color: var(--black);
 }
 .log-out-btn{
     color: white;
@@ -299,6 +298,15 @@ input:focus{
   color: var(--white);
   background-color: var(--primary);
   transition-duration: .3s;
+}
+.follow-btn{
+  border: 1px solid var(--green);
+  color: var(--green);
+}
+.follow-btn:hover{
+  border: 1px solid var(--black);
+  color: var(--white);
+  background-color: black;
 }
 .card-item{
   margin-top: 10px;
@@ -429,4 +437,4 @@ input:focus{
   list-style-type: none;
   padding: 5px 5px;
 }
-
+}
