@@ -13,7 +13,7 @@ class NormalLogin implements LoginStrategy {
         $stmt->execute(['email' => $email, 'password' => $password]);
 
         if ($stmt->rowCount() > 0) {
-            echo "Login successful!";
+            // echo "Login successful!";
             session_start();
             $_SESSION['email'] = $email;
             header("Location: ../home.php");
