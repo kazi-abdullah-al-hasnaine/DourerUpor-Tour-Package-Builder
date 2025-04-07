@@ -76,7 +76,10 @@ $rows = $selectData->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     <p class="card-item package-brief"><?php echo $details; ?></p>
                     <div class="card-item">
-                        <button class="theme-btn package-explore-btn">Explore</button>
+                        <form method="GET" action="package.php" style="display: inline;">
+                            <input type="hidden" name="id" value="<?php echo $package_id; ?>">
+                            <button type="submit" class="theme-btn package-explore-btn">Explore</button>
+                        </form>
                         <?php if (isset($_SESSION['email'])): ?>
                             <?php if ($loggedInUserId == null): ?>
                                 <button class="theme-btn follow-btn">Follow</button>
