@@ -9,6 +9,8 @@ $packageId = isset($_GET['id']) ? intval($_GET['id']) : null;
 
 // Database connection
 require_once 'db_connection/db.php';
+$db = Database::getInstance();
+$conn = $db->getConnection();
 
 include "decoration.php";
 
@@ -17,8 +19,6 @@ include "DesignPatterns/imageProxy.php";
 
 // Getting username from DB for navigation bar
 if(isset($_SESSION['email'])){
-    $db = Database::getInstance();
-    $conn = $db->getConnection();
     $email = $_SESSION['email'];
     $stmt = $conn->prepare("SELECT name FROM user WHERE email = :email");
     $stmt->execute(['email' => $email]);
