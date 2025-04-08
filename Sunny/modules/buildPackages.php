@@ -8,7 +8,8 @@ include_once('../DesignPatterns/PackageBuilder.php');
 $db = Database::getInstance();
 $conn = $db->getConnection();
 
-// Fetch destinations (only for Bangladesh)
+// Fetch destinations (filtering only for Bangladesh)
+$destinations = [];
 $stmt = $conn->prepare("SELECT destination_id, name, country, type, cost FROM destinations WHERE country = 'Bangladesh'");
 $stmt->execute();
 $destinations = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -20,17 +21,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $details = $_POST['details'];
     $buildBy = $user_id;
 
-    // Get next package ID
     $stmt = $conn->query("SELECT MAX(package_id) as max_id FROM packages");
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     $nextPackageId = ($result['max_id'] ?? 0) + 1;
 
-    // Image upload
     $imageName = $nextPackageId . '.jpg';
     $imagePath = "../DesignPatterns/uploaded_img/" . $imageName;
+
     if (!empty($_FILES['package_image']['name'])) {
         $allowedExtensions = ['jpg', 'jpeg', 'png'];
         $fileExtension = strtolower(pathinfo($_FILES['package_image']['name'], PATHINFO_EXTENSION));
+
         if (in_array($fileExtension, $allowedExtensions)) {
             move_uploaded_file($_FILES['package_image']['tmp_name'], $imagePath);
         } else {
@@ -39,32 +40,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Insert into packages table
+    $destinationIds = $_POST['destinations'] ?? [];
+    $moneySaved = $_POST['money_saved'] ?? [];
+    $dayCount = $_POST['day_count'] ?? [];
+    $pickupIds = $_POST['pickup'] ?? [];
+    $transportType = $_POST['transport_type'] ?? [];
+    $transportCost = $_POST['transport_cost'] ?? [];
+
+    $placeholders = implode(',', array_fill(0, count($destinationIds), '?'));
+    $stmt = $conn->prepare("SELECT destination_id, name FROM destinations WHERE destination_id IN ($placeholders)");
+    $stmt->execute($destinationIds);
+    $selectedDestinations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $builder = new TourPackageBuilder();
+    $director = new PackageDirector($builder);
+
+    $director->buildPackage(
+        $destinationIds,
+        $moneySaved,
+        $dayCount,
+        $pickupIds,
+        $transportType,
+        $transportCost,
+        $details,
+        $imageName
+    );
+
+    $package = $builder->getPackage();
+
     $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
                             VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
     $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
 
-    // Insert into package_details
     $stepNumber = 1;
-    foreach ($_POST['destinations'] as $index => $destinationId) {
-        $pickupId = $_POST['pickup'][$index] ?? NULL;
-        $transportType = $_POST['transport_type'][$index] ?? NULL;
-        $transportCost = $_POST['transport_cost'][$index] ?? 0;
-        $moneySaved = $_POST['money_saved'][$index] ?? 0;
-        $dayCount = $_POST['day_count'][$index] ?? 1;
-
-        $stmt = $conn->prepare("INSERT INTO package_details 
-            (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    for ($i = 0; $i < count($destinationIds); $i++) {
+        $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $nextPackageId,
-            $destinationId,
+            $destinationIds[$i],
             $stepNumber,
-            $moneySaved,
-            $dayCount,
-            $pickupId,
-            $transportType,
-            $transportCost
+            $moneySaved[$i] ?? 0,
+            $dayCount[$i] ?? 1,
+            $pickupIds[$i] ?? null,
+            $transportType[$i] ?? null,
+            $transportCost[$i] ?? 0
         ]);
         $stepNumber++;
     }

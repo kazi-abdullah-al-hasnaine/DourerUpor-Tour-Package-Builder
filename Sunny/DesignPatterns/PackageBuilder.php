@@ -8,15 +8,15 @@ abstract class PackageBuilder
 
     public function __construct()
     {
-        $this->package = new Package(); // Initialize the package object
+        $this->package = new Package();
     }
 
-    abstract public function addDestinations();
+    abstract public function addDestinations($destinations);
     abstract public function addMoneySaved($moneySaved);
     abstract public function addDayCount($dayCount);
     abstract public function addPickup($pickup);
     abstract public function addTransportType($transportType);
-    abstract public function addCost($cost);
+    abstract public function addTransportCost($transportCost);
     abstract public function addDetails($details);
     abstract public function addImage($image);
 
@@ -34,7 +34,7 @@ class Package
     public $dayCount = [];
     public $pickup = [];
     public $transportType = [];
-    public $cost = [];
+    public $transportCost = [];
     public $details;
     public $image;
 }
@@ -42,44 +42,34 @@ class Package
 // Concrete Builder for Tour Package
 class TourPackageBuilder extends PackageBuilder
 {
-    private $selectedDestinations;
-
-    public function __construct($selectedDestinations)
+    public function addDestinations($destinations)
     {
-        parent::__construct();
-        $this->selectedDestinations = $selectedDestinations;
-    }
-
-    public function addDestinations()
-    {
-        foreach ($this->selectedDestinations as $destination) {
-            $this->package->destinations[] = $destination['name'];
-        }
+        $this->package->destinations = $destinations;
     }
 
     public function addMoneySaved($moneySaved)
     {
-        $this->package->moneySaved[] = $moneySaved;
+        $this->package->moneySaved = $moneySaved;
     }
 
     public function addDayCount($dayCount)
     {
-        $this->package->dayCount[] = $dayCount;
+        $this->package->dayCount = $dayCount;
     }
 
     public function addPickup($pickup)
     {
-        $this->package->pickup[] = $pickup;
+        $this->package->pickup = $pickup;
     }
 
     public function addTransportType($transportType)
     {
-        $this->package->transportType[] = $transportType;
+        $this->package->transportType = $transportType;
     }
 
-    public function addCost($cost)
+    public function addTransportCost($transportCost)
     {
-        $this->package->cost[] = $cost;
+        $this->package->transportCost = $transportCost;
     }
 
     public function addDetails($details)
@@ -103,16 +93,15 @@ class PackageDirector
         $this->builder = $builder;
     }
 
-    public function buildPackage($moneySaved, $dayCount, $pickup, $transportType, $cost, $details, $image)
+    public function buildPackage($destinations, $moneySaved, $dayCount, $pickup, $transportType, $transportCost, $details, $image)
     {
-        $this->builder->addDestinations();
+        $this->builder->addDestinations($destinations);
         $this->builder->addMoneySaved($moneySaved);
         $this->builder->addDayCount($dayCount);
         $this->builder->addPickup($pickup);
         $this->builder->addTransportType($transportType);
-        $this->builder->addCost($cost);
+        $this->builder->addTransportCost($transportCost);
         $this->builder->addDetails($details);
         $this->builder->addImage($image);
     }
 }
-?>
