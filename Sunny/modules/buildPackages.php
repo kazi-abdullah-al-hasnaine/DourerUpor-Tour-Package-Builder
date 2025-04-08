@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-
 include_once('../db_connection/db.php');
 include_once('../DesignPatterns/PackageBuilder.php');
 
@@ -21,8 +20,7 @@ $user_id = $_SESSION['user_id'] ?? 'unknown'; // Get user ID or default to 'unkn
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $packageName = $_POST['package_name'];
     $details = $_POST['details'];
-    $buildBy = $user_id; // Replace with session user if available
-
+    $buildBy = $user_id;
 
     // Fetch the latest package_id from the packages table
     $stmt = $conn->query("SELECT MAX(package_id) as max_id FROM packages");
@@ -63,24 +61,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($_POST['destinations'] as $index => $destinationId) {
         $moneySaved = $_POST['money_saved'][$index] ?? 0;
         $dayCount = $_POST['day_count'][$index] ?? 1;
-        $pickup = !empty($_POST['pickup'][$index]) ? $_POST['pickup'][$index] : NULL;
-        $transportType = !empty($_POST['transport_type'][$index]) ? $_POST['transport_type'][$index] : NULL;
+        $pickup = $_POST['pickup'][$index] ?? NULL;
+        $transportType = $_POST['transport_type'][$index] ?? NULL;
         $cost = $_POST['cost'][$index] ?? 0;
 
         $director->buildPackage($moneySaved, $dayCount, $pickup, $transportType, $cost, $details, $imageName);
-
     }
 
     // Get the constructed package
     $package = $builder->getPackage();
 
+    // Insert into packages table
     $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
-    VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
+                            VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
     $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
-    $packageId = $nextPackageId; // Now we manually control the ID
-//changed here
+    $packageId = $nextPackageId;
 
-    // Insert selected destinations into package_details
+    // Insert into package_details
     $stepNumber = 1;
     foreach ($selectedDestinations as $index => $destination) {
         $pickup = $_POST['pickup'][$index] ?? NULL;
@@ -101,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -133,6 +129,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin: 5px 0;
             border-radius: 4px;
             border: 1px solid #ccc;
+        }
+
+        input[readonly] {
+            background-color: #f0f0f0;
         }
 
         button {
@@ -174,8 +174,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         function filterAndSelectDestination(input) {
             let datalist = document.getElementById("dest-list").options;
-            let hiddenInput = input.nextElementSibling;
-            let costInput = hiddenInput.nextElementSibling;
+
+            // Get siblings in current step block
+            let siblings = Array.from(input.parentElement.children);
+            let hiddenInput = siblings.find(el => el.name === 'destinations[]');
+            let costInput = siblings.find(el => el.name === 'cost[]');
+
             for (let option of datalist) {
                 if (option.value === input.value) {
                     hiddenInput.value = option.dataset.id;
@@ -192,19 +196,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </script>
 </head>
-
 <body>
     <h1>Build Your Own Package</h1>
     <form method="POST" enctype="multipart/form-data">
         <input type="text" name="package_name" placeholder="Package Name" required>
 
-        <!-- Details Section -->
         <div class="details-container">
             <h3>Package Details</h3>
             <textarea name="details" rows="5" placeholder="Describe your package..." required></textarea>
         </div>
 
-        <!-- Image Upload -->
         <div class="image-container">
             <h3>Upload Package Image</h3>
             <input type="file" name="package_image" accept=".jpg,.jpeg,.png" required>
@@ -215,5 +216,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit" id="publish-button" disabled>Publish</button>
     </form>
 </body>
-
 </html>
