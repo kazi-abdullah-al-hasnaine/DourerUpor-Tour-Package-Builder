@@ -101,7 +101,7 @@ if(isset($_SESSION['email'])){
                         <li class="active-page"><a href="home.php" <?php if($active_page == "home") {echo "class='active'";} ?> >Home</a></li>
                         <li><a <?php if($active_page == "popular") {echo "class='active'";} ?> href="popular.php">Popular</a></li>
                         <li><a <?php if($active_page == "explore") {echo "class='active'";} ?> href="">Explore</a></li>
-                        <li><a <?php if($active_page == "build&share") {echo "class='active'";} ?> href="">Build & Share</a></li>
+                        <li><a <?php if($active_page == "build&share") {echo "class='active'";} ?> href="modules/buildPackages.php">Build & Share</a></li>
                         <li><a href="">Wishlist</a></li>
                     </ul>
                 </div>

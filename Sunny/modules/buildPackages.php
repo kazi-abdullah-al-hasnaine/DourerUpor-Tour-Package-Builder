@@ -1,5 +1,7 @@
 <?php
 session_start();
+
+
 include_once('../db_connection/db.php');
 include_once('../DesignPatterns/PackageBuilder.php');
 
@@ -19,8 +21,16 @@ $user_id = $_SESSION['user_id'] ?? 'unknown'; // Get user ID or default to 'unkn
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $packageName = $_POST['package_name'];
     $details = $_POST['details'];
-    $buildBy = 'User'; // Replace with session user if available
-    $imageName = $user_id . '.jpg';
+    $buildBy = $user_id; // Replace with session user if available
+
+
+    // Fetch the latest package_id from the packages table
+    $stmt = $conn->query("SELECT MAX(package_id) as max_id FROM packages");
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $nextPackageId = ($result['max_id'] ?? 0) + 1;
+
+    // Set the image name based on nextPackageId
+    $imageName = $nextPackageId . '.jpg';
     $imagePath = "../DesignPatterns/uploaded_img/" . $imageName;
 
     // Handle Image Upload
@@ -64,11 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the constructed package
     $package = $builder->getPackage();
 
-    // Insert into packages table
-    $stmt = $conn->prepare("INSERT INTO packages (package_name, publish_time, build_by, status, details, image) 
-                            VALUES (?, NOW(), ?, 'Pending', ?, ?)");
-    $stmt->execute([$packageName, $buildBy, $details, $imageName]);
-    $packageId = $conn->lastInsertId();
+    $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
+    VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
+    $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
+    $packageId = $nextPackageId; // Now we manually control the ID
+//changed here
 
     // Insert selected destinations into package_details
     $stepNumber = 1;
@@ -91,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -99,6 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         body {
             font-family: Arial, sans-serif;
         }
+
         form {
             width: 50%;
             margin: 0 auto;
@@ -106,16 +118,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        .step, .details-container, .image-container {
+
+        .step,
+        .details-container,
+        .image-container {
             margin-bottom: 20px;
         }
-        input, select, textarea {
+
+        input,
+        select,
+        textarea {
             width: 100%;
             padding: 10px;
             margin: 5px 0;
             border-radius: 4px;
             border: 1px solid #ccc;
         }
+
         button {
             background-color: #28a745;
             color: white;
@@ -124,38 +143,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 5px;
             cursor: pointer;
         }
+
         button:disabled {
             background-color: #ccc;
         }
     </style>
     <script>
+        let destinationList = <?php echo json_encode($destinations); ?>;
+
         function addStep() {
             let stepsContainer = document.getElementById("steps-container");
-            let stepHtml = `
-                <div class="step">
-                    <select name="destinations[]" onchange="populateFields(this)" required>
-                        <option value="" disabled selected>Select Destination</option>
-                        <?php foreach ($destinations as $destination): ?>
-                            <option value="<?php echo $destination['destination_id']; ?>" data-cost="<?php echo $destination['cost']; ?>">
-                                <?php echo htmlspecialchars($destination['name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <input type="number" name="cost[]" placeholder="Cost" readonly>
-                    <input type="number" name="money_saved[]" placeholder="Money Saved" required>
-                    <input type="number" name="day_count[]" placeholder="Days" required>
-                    <input type="text" name="pickup[]" placeholder="Pickup (Optional)">
-                    <input type="text" name="transport_type[]" placeholder="Transport Type (Optional)">
-                    <button type="button" onclick="this.parentElement.remove(); checkPublishButton();">Remove</button>
-                </div>`;
-            stepsContainer.insertAdjacentHTML('beforeend', stepHtml);
+            let stepDiv = document.createElement("div");
+            stepDiv.className = "step";
+            stepDiv.innerHTML = `
+                <input type="text" oninput="filterAndSelectDestination(this)" placeholder="Search Destination" list="dest-list" required>
+                <datalist id="dest-list">
+                    ${destinationList.map(dest => `<option data-id="${dest.destination_id}" data-cost="${dest.cost}" value="${dest.name}"></option>`).join('')}
+                </datalist>
+                <input type="hidden" name="destinations[]">
+                <input type="number" name="cost[]" placeholder="Cost" readonly>
+                <input type="number" name="money_saved[]" placeholder="Money Saved" required>
+                <input type="number" name="day_count[]" placeholder="Days" required>
+                <input type="text" name="pickup[]" placeholder="Pickup (Optional)">
+                <input type="text" name="transport_type[]" placeholder="Transport Type (Optional)">
+                <button type="button" onclick="this.parentElement.remove(); checkPublishButton();">Remove</button>
+            `;
+            stepsContainer.appendChild(stepDiv);
             checkPublishButton();
         }
 
-        function populateFields(selectElement) {
-            let selectedOption = selectElement.options[selectElement.selectedIndex];
-            let stepDiv = selectElement.parentElement;
-            stepDiv.querySelector("input[name='cost[]']").value = selectedOption.getAttribute("data-cost");
+        function filterAndSelectDestination(input) {
+            let datalist = document.getElementById("dest-list").options;
+            let hiddenInput = input.nextElementSibling;
+            let costInput = hiddenInput.nextElementSibling;
+            for (let option of datalist) {
+                if (option.value === input.value) {
+                    hiddenInput.value = option.dataset.id;
+                    costInput.value = option.dataset.cost;
+                    break;
+                }
+            }
         }
 
         function checkPublishButton() {
@@ -165,11 +192,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </script>
 </head>
+
 <body>
     <h1>Build Your Own Package</h1>
     <form method="POST" enctype="multipart/form-data">
         <input type="text" name="package_name" placeholder="Package Name" required>
-        
+
         <!-- Details Section -->
         <div class="details-container">
             <h3>Package Details</h3>
@@ -187,4 +215,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit" id="publish-button" disabled>Publish</button>
     </form>
 </body>
+
 </html>
