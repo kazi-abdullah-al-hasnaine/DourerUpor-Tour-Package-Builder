@@ -52,10 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $transportType = $_POST['transport_type'] ?? [];
         $transportCost = $_POST['transport_cost'] ?? [];
 
-        $placeholders = implode(',', array_fill(0, count($destinationIds), '?'));
-        $stmt = $conn->prepare("SELECT destination_id, name FROM destinations WHERE destination_id IN ($placeholders)");
-        $stmt->execute($destinationIds);
-        $selectedDestinations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!empty($destinationIds)) {
+            $placeholders = implode(',', array_fill(0, count($destinationIds), '?'));
+            $stmt = $conn->prepare("SELECT destination_id, name FROM destinations WHERE destination_id IN ($placeholders)");
+            $stmt->execute($destinationIds);
+            $selectedDestinations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         $director->buildFullPackage(
             $packageName,
@@ -75,21 +77,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
         $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
 
-        $stepNumber = 1;
-        for ($i = 0; $i < count($destinationIds); $i++) {
-            $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([
-                $nextPackageId,
-                $destinationIds[$i],
-                $stepNumber,
-                $moneySaved[$i] ?? 0,
-                $dayCount[$i] ?? 1,
-                $pickupIds[$i] ?? null,
-                $transportType[$i] ?? null,
-                $transportCost[$i] ?? 0
-            ]);
-            $stepNumber++;
+        if (!empty($destinationIds)) {
+            $stepNumber = 1;
+            for ($i = 0; $i < count($destinationIds); $i++) {
+                $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
+                                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $nextPackageId,
+                    $destinationIds[$i],
+                    $stepNumber,
+                    $moneySaved[$i] ?? 0,
+                    $dayCount[$i] ?? 1,
+                    $pickupIds[$i] ?? null,
+                    $transportType[$i] ?? null,
+                    $transportCost[$i] ?? 0
+                ]);
+                $stepNumber++;
+            }
         }
     } else { // Basic mode
         // Use the dedicated method for basic package creation
@@ -107,6 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     echo "Package successfully created!";
+    // Redirect to a success page or package list
+    // header("Location: package_list.php");
+    // exit;
 }
 ?>
 
@@ -118,6 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Build a Package</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Your existing CSS styles remain unchanged */
         :root {
             --primary-color: #4361ee;
             --secondary-color: #3f37c9;
@@ -410,18 +418,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const modeInput = document.getElementById('mode-input');
             const publishButton = document.getElementById('publish-button');
             
+            // Toggle required attributes based on mode
+            const stepsContainer = document.getElementById('steps-container');
+            const inputs = document.querySelectorAll('.step input[required]');
+            
             if (mode === 'basic') {
                 basicBtn.classList.add('active');
                 fullBtn.classList.remove('active');
                 fullModeSection.style.display = 'none';
                 modeInput.value = 'basic';
                 publishButton.disabled = false;
+                
+                // Remove required attribute from full mode inputs
+                inputs.forEach(input => {
+                    input.removeAttribute('required');
+                });
             } else {
                 basicBtn.classList.remove('active');
                 fullBtn.classList.add('active');
                 fullModeSection.style.display = 'block';
                 modeInput.value = 'full';
                 checkPublishButton();
+                
+                // Add required attribute back to full mode inputs
+                inputs.forEach(input => {
+                    input.setAttribute('required', '');
+                });
             }
         }
 
@@ -542,6 +564,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function checkPublishButton() {
             const modeInput = document.getElementById('mode-input');
             if (modeInput.value === 'basic') {
+                document.getElementById('publish-button').disabled = false;
                 return; // Always enabled in basic mode
             }
             
@@ -564,6 +587,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         window.onload = function() {
             toggleMode('basic'); // Start in basic mode
         }
+
+        // Add form validation function
+        function validateForm() {
+            const mode = document.getElementById('mode-input').value;
+            
+            if (mode === 'basic') {
+                // Only validate basic fields for basic mode
+                const packageName = document.getElementById('package-name').value;
+                const packageDetails = document.getElementById('package-details').value;
+                const packageImage = document.getElementById('package-image').files;
+                
+                if (!packageName || !packageDetails) {
+                    alert('Please fill in all required fields.');
+                    return false;
+                }
+                
+                if (packageImage.length === 0) {
+                    alert('Please select an image for the package.');
+                    return false;
+                }
+                
+                return true;
+            } else {
+                // Full validation for full mode
+                const steps = document.getElementById('steps-container');
+                if (steps.children.length === 0) {
+                    alert('Please add at least one destination to your package.');
+                    return false;
+                }
+                
+                // Check if all required fields in steps are filled
+                const requiredInputs = steps.querySelectorAll('input[required]');
+                for (let input of requiredInputs) {
+                    if (!input.value) {
+                        alert('Please fill in all required fields in your destinations.');
+                        input.focus();
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+        }
     </script>
 </head>
 <body>
@@ -571,7 +637,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h1><i class="fas fa-suitcase"></i> Build Your Travel Package</h1>
         
         <div class="form-container">
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
                 <input type="hidden" id="mode-input" name="mode" value="basic">
                 
                 <div class="toggle-container">
