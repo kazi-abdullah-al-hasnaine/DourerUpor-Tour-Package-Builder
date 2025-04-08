@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $packageName = $_POST['package_name'];
     $details = $_POST['details'];
     $buildBy = $user_id;
+    $mode = $_POST['mode'] ?? 'basic';
 
     $stmt = $conn->query("SELECT MAX(package_id) as max_id FROM packages");
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -40,53 +41,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $destinationIds = $_POST['destinations'] ?? [];
-    $moneySaved = $_POST['money_saved'] ?? [];
-    $dayCount = $_POST['day_count'] ?? [];
-    $pickupIds = $_POST['pickup'] ?? [];
-    $transportType = $_POST['transport_type'] ?? [];
-    $transportCost = $_POST['transport_cost'] ?? [];
-
-    $placeholders = implode(',', array_fill(0, count($destinationIds), '?'));
-    $stmt = $conn->prepare("SELECT destination_id, name FROM destinations WHERE destination_id IN ($placeholders)");
-    $stmt->execute($destinationIds);
-    $selectedDestinations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
     $builder = new TourPackageBuilder();
     $director = new PackageDirector($builder);
 
-    $director->buildPackage(
-        $destinationIds,
-        $moneySaved,
-        $dayCount,
-        $pickupIds,
-        $transportType,
-        $transportCost,
-        $details,
-        $imageName
-    );
+    if ($mode === 'full') {
+        $destinationIds = $_POST['destinations'] ?? [];
+        $moneySaved = $_POST['money_saved'] ?? [];
+        $dayCount = $_POST['day_count'] ?? [];
+        $pickupIds = $_POST['pickup'] ?? [];
+        $transportType = $_POST['transport_type'] ?? [];
+        $transportCost = $_POST['transport_cost'] ?? [];
 
-    $package = $builder->getPackage();
+        $placeholders = implode(',', array_fill(0, count($destinationIds), '?'));
+        $stmt = $conn->prepare("SELECT destination_id, name FROM destinations WHERE destination_id IN ($placeholders)");
+        $stmt->execute($destinationIds);
+        $selectedDestinations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
-                            VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
-    $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
+        $director->buildFullPackage(
+            $packageName,
+            $destinationIds,
+            $moneySaved,
+            $dayCount,
+            $pickupIds,
+            $transportType,
+            $transportCost,
+            $details,
+            $imageName
+        );
 
-    $stepNumber = 1;
-    for ($i = 0; $i < count($destinationIds); $i++) {
-        $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([
-            $nextPackageId,
-            $destinationIds[$i],
-            $stepNumber,
-            $moneySaved[$i] ?? 0,
-            $dayCount[$i] ?? 1,
-            $pickupIds[$i] ?? null,
-            $transportType[$i] ?? null,
-            $transportCost[$i] ?? 0
-        ]);
-        $stepNumber++;
+        $package = $builder->getPackage();
+
+        $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
+                                VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
+        $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
+
+        $stepNumber = 1;
+        for ($i = 0; $i < count($destinationIds); $i++) {
+            $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $nextPackageId,
+                $destinationIds[$i],
+                $stepNumber,
+                $moneySaved[$i] ?? 0,
+                $dayCount[$i] ?? 1,
+                $pickupIds[$i] ?? null,
+                $transportType[$i] ?? null,
+                $transportCost[$i] ?? 0
+            ]);
+            $stepNumber++;
+        }
+    } else { // Basic mode
+        // Use the dedicated method for basic package creation
+        $director->buildBasicPackage(
+            $packageName,
+            $details,
+            $imageName
+        );
+
+        $package = $builder->getPackage();
+
+        $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
+                                VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
+        $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
     }
 
     echo "Package successfully created!";
@@ -106,9 +123,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         input[readonly] { background-color: #f0f0f0; }
         button { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
         button:disabled { background-color: #ccc; }
+        .toggle-container { display: flex; justify-content: center; margin-bottom: 20px; }
+        .toggle-btn { background-color: #f0f0f0; color: #333; padding: 10px 20px; border: 1px solid #ccc; cursor: pointer; }
+        .toggle-btn.active { background-color: #007bff; color: white; }
+        .full-mode { display: none; }
     </style>
     <script>
         let destinationList = <?php echo json_encode($destinations); ?>;
+
+        function toggleMode(mode) {
+            const basicBtn = document.getElementById('basic-mode-btn');
+            const fullBtn = document.getElementById('full-mode-btn');
+            const fullModeSection = document.getElementById('full-mode-section');
+            const modeInput = document.getElementById('mode-input');
+            const publishButton = document.getElementById('publish-button');
+            
+            if (mode === 'basic') {
+                basicBtn.classList.add('active');
+                fullBtn.classList.remove('active');
+                fullModeSection.style.display = 'none';
+                modeInput.value = 'basic';
+                publishButton.disabled = false;
+            } else {
+                basicBtn.classList.remove('active');
+                fullBtn.classList.add('active');
+                fullModeSection.style.display = 'block';
+                modeInput.value = 'full';
+                checkPublishButton();
+            }
+        }
 
         function addStep() {
             let container = document.getElementById("steps-container");
@@ -166,15 +209,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         function checkPublishButton() {
+            const modeInput = document.getElementById('mode-input');
+            if (modeInput.value === 'basic') {
+                return; // Always enabled in basic mode
+            }
+            
             let btn = document.getElementById("publish-button");
             let steps = document.getElementById("steps-container");
             btn.disabled = steps.children.length === 0;
+        }
+
+        window.onload = function() {
+            toggleMode('basic'); // Start in basic mode
         }
     </script>
 </head>
 <body>
     <h1>Build Your Own Package</h1>
+    
     <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" id="mode-input" name="mode" value="basic">
+        
+        <div class="toggle-container">
+            <button type="button" id="basic-mode-btn" class="toggle-btn" onclick="toggleMode('basic')">Basic Mode</button>
+            <button type="button" id="full-mode-btn" class="toggle-btn" onclick="toggleMode('full')">Full Mode</button>
+        </div>
+        
         <input type="text" name="package_name" placeholder="Package Name" required>
 
         <div class="details-container">
@@ -187,9 +247,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="file" name="package_image" accept=".jpg,.jpeg,.png" required>
         </div>
 
-        <div id="steps-container"></div>
-        <button type="button" onclick="addStep()">Add Destination</button>
-        <button type="submit" id="publish-button" disabled>Publish</button>
+        <div id="full-mode-section" class="full-mode">
+            <h3>Add Destinations</h3>
+            <div id="steps-container"></div>
+            <button type="button" onclick="addStep()">Add Destination</button>
+        </div>
+        
+        <button type="submit" id="publish-button">Publish</button>
     </form>
 </body>
 </html>
