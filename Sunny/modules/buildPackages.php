@@ -8,34 +8,29 @@ include_once('../DesignPatterns/PackageBuilder.php');
 $db = Database::getInstance();
 $conn = $db->getConnection();
 
-// Fetch destinations (filtering only for Bangladesh)
-$destinations = [];
+// Fetch destinations (only for Bangladesh)
 $stmt = $conn->prepare("SELECT destination_id, name, country, type, cost FROM destinations WHERE country = 'Bangladesh'");
 $stmt->execute();
 $destinations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$user_id = $_SESSION['user_id'] ?? 'unknown'; // Get user ID or default to 'unknown'
+$user_id = $_SESSION['user_id'] ?? 'unknown';
 
-// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $packageName = $_POST['package_name'];
     $details = $_POST['details'];
     $buildBy = $user_id;
 
-    // Fetch the latest package_id from the packages table
+    // Get next package ID
     $stmt = $conn->query("SELECT MAX(package_id) as max_id FROM packages");
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     $nextPackageId = ($result['max_id'] ?? 0) + 1;
 
-    // Set the image name based on nextPackageId
+    // Image upload
     $imageName = $nextPackageId . '.jpg';
     $imagePath = "../DesignPatterns/uploaded_img/" . $imageName;
-
-    // Handle Image Upload
     if (!empty($_FILES['package_image']['name'])) {
         $allowedExtensions = ['jpg', 'jpeg', 'png'];
         $fileExtension = strtolower(pathinfo($_FILES['package_image']['name'], PATHINFO_EXTENSION));
-
         if (in_array($fileExtension, $allowedExtensions)) {
             move_uploaded_file($_FILES['package_image']['tmp_name'], $imagePath);
         } else {
@@ -44,51 +39,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Convert selected destination IDs into full details
-    $selectedDestinations = [];
-    if (!empty($_POST['destinations'])) {
-        $placeholders = implode(',', array_fill(0, count($_POST['destinations']), '?'));
-        $stmt = $conn->prepare("SELECT * FROM destinations WHERE destination_id IN ($placeholders)");
-        $stmt->execute($_POST['destinations']);
-        $selectedDestinations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    // Initialize the builder and director
-    $builder = new TourPackageBuilder($selectedDestinations);
-    $director = new PackageDirector($builder);
-
-    // Loop through each destination and pass the user input to the builder
-    foreach ($_POST['destinations'] as $index => $destinationId) {
-        $moneySaved = $_POST['money_saved'][$index] ?? 0;
-        $dayCount = $_POST['day_count'][$index] ?? 1;
-        $pickup = $_POST['pickup'][$index] ?? NULL;
-        $transportType = $_POST['transport_type'][$index] ?? NULL;
-        $cost = $_POST['cost'][$index] ?? 0;
-
-        $director->buildPackage($moneySaved, $dayCount, $pickup, $transportType, $cost, $details, $imageName);
-    }
-
-    // Get the constructed package
-    $package = $builder->getPackage();
-
     // Insert into packages table
     $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
                             VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
     $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
-    $packageId = $nextPackageId;
 
     // Insert into package_details
     $stepNumber = 1;
-    foreach ($selectedDestinations as $index => $destination) {
-        $pickup = $_POST['pickup'][$index] ?? NULL;
+    foreach ($_POST['destinations'] as $index => $destinationId) {
+        $pickupId = $_POST['pickup'][$index] ?? NULL;
         $transportType = $_POST['transport_type'][$index] ?? NULL;
+        $transportCost = $_POST['transport_cost'][$index] ?? 0;
         $moneySaved = $_POST['money_saved'][$index] ?? 0;
         $dayCount = $_POST['day_count'][$index] ?? 1;
-        $cost = $_POST['cost'][$index] ?? 0;
 
-        $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$packageId, $destination['destination_id'], $stepNumber, $moneySaved, $dayCount, $pickup, $transportType, $cost]);
+        $stmt = $conn->prepare("INSERT INTO package_details 
+            (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            $nextPackageId,
+            $destinationId,
+            $stepNumber,
+            $moneySaved,
+            $dayCount,
+            $pickupId,
+            $transportType,
+            $transportCost
+        ]);
         $stepNumber++;
     }
 
@@ -100,87 +77,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Build a Package</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-
-        form {
-            width: 50%;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        .step,
-        .details-container,
-        .image-container {
-            margin-bottom: 20px;
-        }
-
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-
-        input[readonly] {
-            background-color: #f0f0f0;
-        }
-
-        button {
-            background-color: #28a745;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button:disabled {
-            background-color: #ccc;
-        }
+        body { font-family: Arial; }
+        form { width: 50%; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        .step, .details-container, .image-container { margin-bottom: 20px; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; }
+        input[readonly] { background-color: #f0f0f0; }
+        button { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:disabled { background-color: #ccc; }
     </style>
     <script>
         let destinationList = <?php echo json_encode($destinations); ?>;
 
         function addStep() {
-            let stepsContainer = document.getElementById("steps-container");
-            let stepDiv = document.createElement("div");
-            stepDiv.className = "step";
-            stepDiv.innerHTML = `
-                <input type="text" oninput="filterAndSelectDestination(this)" placeholder="Search Destination" list="dest-list" required>
+            let container = document.getElementById("steps-container");
+            let step = document.createElement("div");
+            step.className = "step";
+            step.innerHTML = `
+                <h4>Step</h4>
+                <input type="text" placeholder="Search Destination" oninput="selectDestination(this)" list="dest-list" required>
                 <datalist id="dest-list">
                     ${destinationList.map(dest => `<option data-id="${dest.destination_id}" data-cost="${dest.cost}" value="${dest.name}"></option>`).join('')}
                 </datalist>
                 <input type="hidden" name="destinations[]">
-                <input type="number" name="cost[]" placeholder="Cost" readonly>
-                <input type="number" name="money_saved[]" placeholder="Money Saved" required>
-                <input type="number" name="day_count[]" placeholder="Days" required>
-                <input type="text" name="pickup[]" placeholder="Pickup (Optional)">
+                <input type="number" name="cost[]" placeholder="Destination Cost" readonly>
+
+                <input type="text" placeholder="Search Pickup Point" oninput="selectPickup(this)" list="pickup-list">
+                <datalist id="pickup-list">
+                    ${destinationList.map(dest => `<option data-id="${dest.destination_id}" value="${dest.name}"></option>`).join('')}
+                </datalist>
+                <input type="hidden" name="pickup[]">
+
                 <input type="text" name="transport_type[]" placeholder="Transport Type (Optional)">
+                <input type="number" name="transport_cost[]" placeholder="Transport Cost (manual input)">
+                <input type="number" name="money_saved[]" placeholder="Money Saved" required>
+                <input type="number" name="day_count[]" placeholder="Day Count" required>
                 <button type="button" onclick="this.parentElement.remove(); checkPublishButton();">Remove</button>
             `;
-            stepsContainer.appendChild(stepDiv);
+            container.appendChild(step);
             checkPublishButton();
         }
 
-        function filterAndSelectDestination(input) {
-            let datalist = document.getElementById("dest-list").options;
-
-            // Get siblings in current step block
+        function selectDestination(input) {
             let siblings = Array.from(input.parentElement.children);
             let hiddenInput = siblings.find(el => el.name === 'destinations[]');
             let costInput = siblings.find(el => el.name === 'cost[]');
-
-            for (let option of datalist) {
+            let options = document.getElementById("dest-list").options;
+            for (let option of options) {
                 if (option.value === input.value) {
                     hiddenInput.value = option.dataset.id;
                     costInput.value = option.dataset.cost;
@@ -189,10 +133,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        function selectPickup(input) {
+            let siblings = Array.from(input.parentElement.children);
+            let hiddenPickup = siblings.find(el => el.name === 'pickup[]');
+            let options = document.getElementById("pickup-list").options;
+            for (let option of options) {
+                if (option.value === input.value) {
+                    hiddenPickup.value = option.dataset.id;
+                    break;
+                }
+            }
+        }
+
         function checkPublishButton() {
-            let publishButton = document.getElementById("publish-button");
-            let stepsContainer = document.getElementById("steps-container");
-            publishButton.disabled = stepsContainer.children.length === 0;
+            let btn = document.getElementById("publish-button");
+            let steps = document.getElementById("steps-container");
+            btn.disabled = steps.children.length === 0;
         }
     </script>
 </head>
