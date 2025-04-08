@@ -16,13 +16,11 @@ $popularPage = new BasePage("Explore what's trending now! <br> with DourerUpor!"
 
 // Step 6: Wrap Pages with Decorators
 
-$decoratedPopularPage = 
-        new FooterDecorator(
-            new PopularSection($popularPage)
-        );
+$decoratedPopularPage =
+    new FooterDecorator(
+        new PopularSection($popularPage)
+    );
 
 // Render Pages
 
 $decoratedPopularPage->render();
-
-?>

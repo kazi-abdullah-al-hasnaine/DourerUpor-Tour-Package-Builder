@@ -13,9 +13,6 @@
   box-sizing: border-box;
   font-family: sans-serif;
 }
-body{
-/*  padding: 0 20px;*/
-}
 
 /*----------Navigation bar style----------------*/
 
@@ -29,6 +26,10 @@ body{
   padding: 20px 10px;
   margin: 0 auto;
 
+}
+.special-nav{
+  background: rgb(98,166,241);
+background: linear-gradient(273deg, rgba(98,166,241,1) 0%, rgba(65,205,185,1) 100%);
 }
 
 .logo{
@@ -225,12 +226,14 @@ input:focus{
     transition-duration: .3s;
 }
 .remove-btn{
-    color: tomato;
-    border: 1px solid tomato;
+    color: rgb(255, 255, 255);
+    background-color: var(--black);
+    border: 1px solid var(--black);
+    padding: 5px 15px;
 }
 .remove-btn:hover{
-    background-color: tomato;
-    color: white;
+    background-color: transparent;
+    color: var(--black);
 }
 .log-out-btn{
     color: white;
@@ -300,6 +303,15 @@ input:focus{
   background-color: var(--primary);
   transition-duration: .3s;
 }
+.follow-btn{
+  border: 1px solid var(--green);
+  color: var(--green);
+}
+.follow-btn:hover{
+  border: 1px solid var(--black);
+  color: var(--white);
+  background-color: black;
+}
 .card-item{
   margin-top: 10px;
 }
@@ -307,13 +319,23 @@ input:focus{
 #explore-section{
 /*  max-width: 1200px;*/
   margin: 0 auto;
-  margin-top: 100px;
+  /* margin-top: 100px; */
+  /* padding-top: 130px; */
   background-color: var(--secondary);
-  height: 60vh;
+  /* height: 60vh; */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+.small-section{
+  margin-top: 100px;
+  height: 60vh;
+}
+.large-section{
+  padding-top: 130px;
+  padding-bottom: 50px;
+  height: content-fit;
 }
 .explore-package-card-container{
   display: flex;
@@ -335,13 +357,22 @@ input:focus{
   align-items: center;
 }
 .exlpore-card{
-  height: 250px;
-  width: 250px;
+  /* height: 250px;
+  width: 250px; */
   background-color: var(--blue);
   border-radius: 10px;
   margin: 0 10px;
   color: white;
   transition-duration: .3s;
+}
+.small-card{
+  height: 250px;
+  width: 250px;
+}
+.large-card{
+  height: 250px;
+  width: 1200px;
+  margin-top: 30px
 }
 .exlpore-card:hover{
   transform: scale(1.1);
@@ -405,9 +436,73 @@ input:focus{
 }
 
 
+/*------------------package details page----------------*/
+
+#package-details{
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.package-details{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.package-details .left .package-cover{
+  width: 1200px;
+  height: 300px;
+  margin: 50px 0 25px 0;
+}
+
+.package-details-container .package-name{
+  font-size: 2.2rem;
+}
+
+#package-map{
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.package-map-title{
+  margin: 30px 0;
+  font-size: 2.2rem;
+
+}
+.map-card{
+  border: 1px solid var(--blue);
+/*  color: var(--white);*/
+  background: rgb(255,255,255);
+  background: linear-gradient(273deg, rgba(255,255,255,1) 0%, rgba(65,205,185,1) 100%);
+  border-radius: 10px;
+  padding: 10px 10px;
+  margin-bottom: 10px;
+}
+.map-item{
+  margin: 8px 5px;
+}
+.p-day{
+  background-color: var(--white);
+  color: black;
+  font-weight: bold;
+  display: inline-block;
+  padding: 5px 10px;
+  font-size: 1.1rem;
+  border-radius: 5px;
+  text-align: center;
+  margin: 0px 5px;
+}
+.p-main{
+  font-size: 1.3rem;
+/*  font-weight: bold;*/
+  color: var(--black);
+  margin-top: 10px;
+}
+.p-optional{
+  color: var(--black);
+}
+
 @media only screen and (max-width: 700px) {
   nav ul li{
   list-style-type: none;
   padding: 5px 5px;
 }
-
+}
