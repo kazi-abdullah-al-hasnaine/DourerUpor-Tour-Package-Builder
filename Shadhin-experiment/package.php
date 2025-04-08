@@ -16,6 +16,7 @@ include "decoration.php";
 
 include "DesignPatterns/imageProxy.php";
 
+$conn = Database::getInstance()->getConnection();
 
 // Getting username from DB for navigation bar
 if(isset($_SESSION['email'])){
