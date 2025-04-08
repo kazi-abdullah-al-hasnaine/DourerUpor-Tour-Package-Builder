@@ -28,8 +28,8 @@
 
 }
 .special-nav{
-  background: rgb(98,166,241);
-background: linear-gradient(273deg, rgba(98,166,241,1) 0%, rgba(65,205,185,1) 100%);
+  background: var(--blue);
+/*background: linear-gradient(273deg, rgba(98,166,241,1) 0%, rgba(65,205,185,1) 100%);*/
 }
 
 .logo{
@@ -470,10 +470,10 @@ input:focus{
 .map-card{
   border: 1px solid var(--blue);
 /*  color: var(--white);*/
-  background: rgb(255,255,255);
-  background: linear-gradient(273deg, rgba(255,255,255,1) 0%, rgba(65,205,185,1) 100%);
-  border-radius: 10px;
+ background: rgb(55,114,157);
+background: linear-gradient(71deg, rgba(55,114,157,1) 0%, rgba(242,242,242,1) 100%);
   padding: 10px 10px;
+  border-radius: 10px;
   margin-bottom: 10px;
 }
 .map-item{
@@ -489,6 +489,10 @@ input:focus{
   border-radius: 5px;
   text-align: center;
   margin: 0px 5px;
+}
+.p-cost{
+  font-size: .9rem;
+  color: var(--blue);
 }
 .p-main{
   font-size: 1.3rem;

@@ -16,6 +16,8 @@ include "decoration.php";
 
 include "DesignPatterns/imageProxy.php";
 
+$conn = Database::getInstance()->getConnection();
+
 // Getting username from DB for navigation bar
 if(isset($_SESSION['email'])){
     $email = $_SESSION['email'];
@@ -188,9 +190,43 @@ $rows = $selectData->fetchAll(PDO::FETCH_ASSOC);
 			    $saved       = $row['Saved']
         	?>
     		<div class="map-card">
-    			<p class="p-day map-item"><?php echo htmlspecialchars($stepCount); ?></p><p class="p-day map-item">DAY: <?php echo htmlspecialchars($dayCount); ?></p>
+    			<p class="p-day map-item"><?php echo htmlspecialchars($stepCount); ?></p><p class="p-day map-item">DAY: <?php echo htmlspecialchars($dayCount); ?></p><p class="p-day p-cost map-item"><i class="fa-solid fa-coins"></i> <?php echo htmlspecialchars("৳ " . $destCost+$transCost-$saved); ?></p>
     			<p class="p-main map-item"><i class="fa-solid fa-location-dot"></i> <b><?php echo htmlspecialchars($destination); ?></b> | <b><?php echo htmlspecialchars($destType); ?></b> | <b>৳<?php echo htmlspecialchars($destCost); ?></b></p>
-    			<p class="p-optional map-item">From: <?php echo htmlspecialchars($pickup); ?> | Transportation: <?php echo htmlspecialchars($transType); ?> | Cost: ৳<?php echo htmlspecialchars($transCost); ?> | Saved: ৳<?php echo htmlspecialchars($saved); ?></p> 
+    			<p class="p-optional map-item">
+                <?php
+                    // Set transport icon based on transType
+                    $icon = '<i class="fa-solid fa-car"></i>'; // default
+                    if (!empty($transType)) {
+                        $type = strtolower($transType);
+                        if ($type === 'bike' || $type === 'motorcycle') {
+                            $icon = '<i class="fa-solid fa-motorcycle"></i>';
+                        } elseif ($type === 'train' || $type === 'metro' || $type === 'tram') {
+                            $icon = '<i class="fa-solid fa-train"></i>';
+                        } elseif ($type === 'plane' || $type === 'airplane' || $type === 'flight') {
+                            $icon = '<i class="fa-solid fa-plane"></i>';
+                        }
+                        elseif ($type === 'bus' || $type === 'public transport' || $type === 'local bus') {
+                            $icon = '<i class="fa-solid fa-bus-simple"></i>';
+                        }
+                    }
+                ?>
+
+                    <?php if (!empty($pickup)): ?>
+                        <?php echo $icon . ' ' . htmlspecialchars($pickup . " to "); ?>
+                    <?php endif; ?>
+
+                    <?php if (!empty($pickup)): ?>
+                        <?php echo htmlspecialchars($destination . " using "); ?>
+                    <?php endif; ?>
+
+                    <?php if (!empty($transType)): ?>
+                        <?php echo htmlspecialchars($transType . " for ৳" . $transCost . " | "); ?>
+                    <?php endif; ?>
+
+                    <i class="fa-solid fa-tag"></i> Saved: ৳<?php echo htmlspecialchars($saved); ?>
+                </p>
+
+
     		</div>
     		<?php endforeach; ?>
     	</div>
