@@ -8,12 +8,12 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once('C:\xampp2\htdocs\website\DourerUpor-Tour-Package-Builder\Umo Banik\db_connection\db.php');
 $conn = Database::getInstance()->getConnection();
 
-// Define Review and ReviewCollection classes
+// Define Review and ReviewCollection classes - Iterator design pattern
 class Review {
     public $userName;
     public $rating;
     public $comment;
-
+    
     public function __construct($userName, $rating, $comment) {
         $this->userName = $userName;
         $this->rating = $rating;
@@ -24,31 +24,31 @@ class Review {
 class ReviewCollection implements Iterator {
     private $reviews = [];
     private $position = 0;
-
+    
     public function __construct($reviews = []) {
         $this->reviews = $reviews;
     }
-
+    
     public function addReview(Review $review): void {
         $this->reviews[] = $review;
     }
-
+    
     public function current(): Review {
         return $this->reviews[$this->position];
     }
-
+    
     public function key(): int {
         return $this->position;
     }
-
+    
     public function next(): void {
         ++$this->position;
     }
-
+    
     public function rewind(): void {
         $this->position = 0;
     }
-
+    
     public function valid(): bool {
         return isset($this->reviews[$this->position]);
     }
@@ -63,12 +63,12 @@ function getReviewsForPackage($conn, $packageId): ReviewCollection {
         WHERE r.package_id = ?
     ");
     $stmt->execute([$packageId]);
-
+    
     $reviews = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $reviews[] = new Review($row['userName'], $row['rating'], $row['review']);
     }
-
+    
     return new ReviewCollection($reviews);
 }
 
@@ -82,37 +82,86 @@ $packageId = $packageIdForReview;
 $reviewCollection = getReviewsForPackage($conn, $packageId);
 ?>
 
-<section id="reviews">
-    <h3>Reviews</h3>
-    <div class="reviews-container">
-        <?php if ($reviewCollection->valid()): ?>
-            <?php foreach ($reviewCollection as $review): ?>
-                <div class="review-item">
-                    <h4><?= htmlspecialchars($review->userName) ?></h4>
-                    <p>Rating: <?= htmlspecialchars($review->rating) ?>/5</p>
-                    <p><?= nl2br(htmlspecialchars($review->comment)) ?></p>
-                </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <p>No reviews yet.</p>
-        <?php endif; ?>
-    </div>
+<!DOCTYPE html>
+<html lang="en">
 
-    <h3>Write a Review</h3>
-    <?php if (isset($_SESSION['email'])): ?>
-        <form action="submit_review.php" method="POST">
-            <textarea name="comment" placeholder="Write your review here..." required></textarea>
-            <select name="rating" required>
-                <option value="1">1 Star</option>
-                <option value="2">2 Stars</option>
-                <option value="3">3 Stars</option>
-                <option value="4">4 Stars</option>
-                <option value="5">5 Stars</option>
-            </select>
-            <button type="submit">Submit Review</button>
-            <input type="hidden" name="packageId" value="<?= htmlspecialchars($packageId) ?>">
-        </form>
-    <?php else: ?>
-        <p>You need to <a href="login.php">login</a> to write a review.</p>
-    <?php endif; ?>
-</section>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Package Reviews</title>
+    <!-- CSS File Link -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <section id="review" class="review">
+    <!-- WRITE REVIEW -->
+    <section id="write-review">
+        <div class="write-review-container">
+            <h2>Review</h2>
+            
+            <?php
+            if (isset($_SESSION['email'])):
+                echo "
+                <div class='review-form'>
+                    <form action='submit_review.php' method='POST'>
+                        <div class='form-group'>
+                            <label>Rating:</label>
+                            <select class='form-control' name='rating' required>
+                                <option value='1'>1 ★</option>
+                                <option value='2'>2 ★★</option>
+                                <option value='3'>3 ★★★</option>
+                                <option value='4'>4 ★★★★</option>
+                                <option value='5'>5 ★★★★★</option>
+                            </select>
+                        </div>
+                        <div class='form-group'>
+                            <br><label>Drop a Review</label><br>
+                            <textarea class='form-control' name='comment' placeholder='Write your review here...' required></textarea>
+
+                        </div>
+                        <input type='hidden' name='packageId' value='{$packageId}'>
+                        <button type='submit' class='btn btn-custom'>Submit Review</button>
+                    </form>
+                </div>";
+            else:
+                echo "
+                <div class='review-form'>
+                    <p>You need to <a href='login.php'>login</a> to write a review.</p>
+                </div>";
+            endif;
+            ?>
+        </div>
+    </section> 
+    <!-- DISPLAYING ALL REVIEWS -->
+    <section id="all-reviews">
+        <div class="reviews-list">
+            <h3>Customer Reviews</h3>
+            
+            <div class="reviews-container">
+                <?php
+                if ($reviewCollection->valid()):
+                    foreach ($reviewCollection as $review):
+                        echo "
+                        <div class='review-item'>
+                            <h4>{$review->userName}</h4>
+                            <p>Rating: {$review->rating}/5</p><br>
+                            <p>{$review->comment}</p>
+                        </div>
+                        ";
+                    endforeach;
+                else:
+                    echo "
+                    <div class='review-item'>
+                        <p>No reviews yet.</p>
+                    </div>
+                    ";
+                endif;
+                ?>
+            </div>
+        </div>
+    </section>
+    </section>
+
+</body>
+</html>
