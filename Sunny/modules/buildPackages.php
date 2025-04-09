@@ -8,6 +8,31 @@ include_once('../DesignPatterns/PackageBuilder.php');
 $db = Database::getInstance();
 $conn = $db->getConnection();
 
+// Check if we're editing an existing package
+$isEditMode = false;
+$packageData = null;
+$packageDetails = [];
+
+if (isset($_GET['id']) && !empty($_GET['id'])) {
+    $package_id = $_GET['id'];
+    $isEditMode = true;
+    
+    // Fetch package data
+    $stmt = $conn->prepare("SELECT * FROM packages WHERE package_id = ?");
+    $stmt->execute([$package_id]);
+    $packageData = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$packageData) {
+        echo "Package not found!";
+        exit;
+    }
+    
+    // Fetch package details if any exist (for full mode packages)
+    $stmt = $conn->prepare("SELECT * FROM package_details WHERE package_id = ? ORDER BY step_number");
+    $stmt->execute([$package_id]);
+    $packageDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 // Fetch destinations (filtering only for Bangladesh)
 $destinations = [];
 $stmt = $conn->prepare("SELECT destination_id, name, country, type, cost FROM destinations WHERE country = 'Bangladesh'");
@@ -21,14 +46,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $details = $_POST['details'];
     $buildBy = $user_id;
     $mode = $_POST['mode'] ?? 'basic';
+    
+    // Handle package ID (new or existing)
+    if ($isEditMode) {
+        $packageId = $packageData['package_id'];
+    } else {
+        $stmt = $conn->query("SELECT MAX(package_id) as max_id FROM packages");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $packageId = ($result['max_id'] ?? 0) + 1;
+    }
 
-    $stmt = $conn->query("SELECT MAX(package_id) as max_id FROM packages");
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    $nextPackageId = ($result['max_id'] ?? 0) + 1;
-
-    $imageName = $nextPackageId . '.jpg';
+    $imageName = $packageData['image'] ?? ($packageId . '.jpg');
     $imagePath = "../DesignPatterns/uploaded_img/" . $imageName;
 
+    // Handle image upload if a new image is provided
     if (!empty($_FILES['package_image']['name'])) {
         $allowedExtensions = ['jpg', 'jpeg', 'png'];
         $fileExtension = strtolower(pathinfo($_FILES['package_image']['name'], PATHINFO_EXTENSION));
@@ -73,9 +104,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $package = $builder->getPackage();
 
-        $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
+        if ($isEditMode) {
+            // Update existing package
+            $stmt = $conn->prepare("UPDATE packages SET package_name = ?, details = ?, image = ? WHERE package_id = ?");
+            $stmt->execute([$packageName, $details, $imageName, $packageId]);
+            
+            // Delete existing package details
+            $stmt = $conn->prepare("DELETE FROM package_details WHERE package_id = ?");
+            $stmt->execute([$packageId]);
+        } else {
+            // Insert new package
+            $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
                                 VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
-        $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
+            $stmt->execute([$packageId, $packageName, $buildBy, $details, $imageName]);
+        }
 
         if (!empty($destinationIds)) {
             $stepNumber = 1;
@@ -83,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([
-                    $nextPackageId,
+                    $packageId,
                     $destinationIds[$i],
                     $stepNumber,
                     $moneySaved[$i] ?? 0,
@@ -105,15 +147,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $package = $builder->getPackage();
 
-        $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
+        if ($isEditMode) {
+            // Update existing package
+            $stmt = $conn->prepare("UPDATE packages SET package_name = ?, details = ?, image = ? WHERE package_id = ?");
+            $stmt->execute([$packageName, $details, $imageName, $packageId]);
+        } else {
+            // Insert new package
+            $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
                                 VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
-        $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
+            $stmt->execute([$packageId, $packageName, $buildBy, $details, $imageName]);
+        }
     }
 
-    echo "Package successfully created!";
-    // Redirect to a success page or package list
-    // header("Location: package_list.php");
-    // exit;
+    echo "Package successfully " . ($isEditMode ? "updated!" : "created!");
+    // Redirect to profile page after saving
+    header("Location: ../profile.php");
+    exit;
 }
 ?>
 
@@ -122,9 +171,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Build a Package</title>
+    <title><?php echo $isEditMode ? 'Edit' : 'Build' ?> a Package</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
+  
+    
+<style>
         /* Your existing CSS styles remain unchanged */
         :root {
             --primary-color: #4361ee;
@@ -410,6 +461,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
     <script>
         let destinationList = <?php echo json_encode($destinations); ?>;
+        let isEditMode = <?php echo $isEditMode ? 'true' : 'false'; ?>;
+        let existingPackageDetails = <?php echo !empty($packageDetails) ? json_encode($packageDetails) : '[]'; ?>;
 
         function toggleMode(mode) {
             const basicBtn = document.getElementById('basic-mode-btn');
@@ -447,11 +500,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        function addStep() {
+        function addStep(destinationData = null) {
             let stepCount = document.querySelectorAll('.step').length + 1;
             let container = document.getElementById("steps-container");
             let step = document.createElement("div");
             step.className = "step";
+            
+            // Pre-fill values if we have destination data
+            const destinationId = destinationData ? destinationData.destination_id : '';
+            const destinationName = destinationData ? getDestinationNameById(destinationId) : '';
+            const destinationCost = destinationData ? getDestinationCostById(destinationId) : '';
+            const moneySaved = destinationData ? destinationData.money_saved : '';
+            const dayCount = destinationData ? destinationData.day_count : '';
+            const pickupId = destinationData ? destinationData.pickup : '';
+            const pickupName = pickupId ? getDestinationNameById(pickupId) : '';
+            const transportType = destinationData ? destinationData.transport_type : '';
+            const transportCost = destinationData ? destinationData.cost : '';
+            
             step.innerHTML = `
                 <h4><i class="fas fa-map-marker-alt"></i> Step ${stepCount}</h4>
                 <button type="button" class="remove-step" onclick="this.parentElement.remove(); renumberSteps(); checkPublishButton();"><i class="fas fa-times"></i></button>
@@ -461,19 +526,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label for="destination-${stepCount}">Destination</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-search input-icon"></i>
-                            <input type="text" id="destination-${stepCount}" class="form-control has-icon" placeholder="Search destination" oninput="selectDestination(this)" list="dest-list" required>
+                            <input type="text" id="destination-${stepCount}" class="form-control has-icon" placeholder="Search destination" oninput="selectDestination(this)" list="dest-list" required value="${destinationName}">
                             <datalist id="dest-list">
                                 ${destinationList.map(dest => `<option data-id="${dest.destination_id}" data-cost="${dest.cost}" value="${dest.name}"></option>`).join('')}
                             </datalist>
                         </div>
-                        <input type="hidden" name="destinations[]">
+                        <input type="hidden" name="destinations[]" value="${destinationId}">
                     </div>
                     
                     <div class="form-group">
                         <label>Destination Cost</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-dollar-sign input-icon"></i>
-                            <input type="number" name="cost[]" class="form-control has-icon" placeholder="Cost" readonly>
+                            <input type="number" name="cost[]" class="form-control has-icon" placeholder="Cost" readonly value="${destinationCost}">
                         </div>
                     </div>
                     
@@ -481,7 +546,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Money Saved</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-piggy-bank input-icon"></i>
-                            <input type="number" name="money_saved[]" class="form-control has-icon" placeholder="Amount saved" required>
+                            <input type="number" name="money_saved[]" class="form-control has-icon" placeholder="Amount saved" required value="${moneySaved}">
                         </div>
                     </div>
                     
@@ -489,7 +554,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Day Count</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-calendar-day input-icon"></i>
-                            <input type="number" name="day_count[]" class="form-control has-icon" placeholder="Number of days" required>
+                            <input type="number" name="day_count[]" class="form-control has-icon" placeholder="Number of days" required value="${dayCount}">
                         </div>
                     </div>
                     
@@ -497,19 +562,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Pickup Point</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-map-pin input-icon"></i>
-                            <input type="text" class="form-control has-icon" placeholder="Search pickup point" oninput="selectPickup(this)" list="pickup-list">
+                            <input type="text" class="form-control has-icon" placeholder="Search pickup point" oninput="selectPickup(this)" list="pickup-list" value="${pickupName}">
                             <datalist id="pickup-list">
                                 ${destinationList.map(dest => `<option data-id="${dest.destination_id}" value="${dest.name}"></option>`).join('')}
                             </datalist>
                         </div>
-                        <input type="hidden" name="pickup[]">
+                        <input type="hidden" name="pickup[]" value="${pickupId}">
                     </div>
                     
                     <div class="form-group">
                         <label>Transport Type</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-bus input-icon"></i>
-                            <input type="text" name="transport_type[]" class="form-control has-icon" placeholder="Bus, Train, etc.">
+                            <input type="text" name="transport_type[]" class="form-control has-icon" placeholder="Bus, Train, etc." value="${transportType}">
                         </div>
                     </div>
                     
@@ -517,13 +582,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Transport Cost</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-dollar-sign input-icon"></i>
-                            <input type="number" name="transport_cost[]" class="form-control has-icon" placeholder="Transport cost">
+                            <input type="number" name="transport_cost[]" class="form-control has-icon" placeholder="Transport cost" value="${transportCost}">
                         </div>
                     </div>
                 </div>
             `;
             container.appendChild(step);
             checkPublishButton();
+        }
+        
+        function getDestinationNameById(id) {
+            for (let dest of destinationList) {
+                if (dest.destination_id == id) {
+                    return dest.name;
+                }
+            }
+            return '';
+        }
+        
+        function getDestinationCostById(id) {
+            for (let dest of destinationList) {
+                if (dest.destination_id == id) {
+                    return dest.cost;
+                }
+            }
+            return '';
         }
 
         function renumberSteps() {
@@ -580,12 +663,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (fileInput.files.length > 0) {
                 fileName.textContent = fileInput.files[0].name;
             } else {
-                fileName.textContent = '';
+                fileName.textContent = '<?php echo $isEditMode ? basename($packageData['image']) : ''; ?>';
             }
         }
 
         window.onload = function() {
-            toggleMode('basic'); // Start in basic mode
+            // If in edit mode and we have package details, determine the mode
+            if (isEditMode) {
+                if (existingPackageDetails.length > 0) {
+                    toggleMode('full');
+                    // Add steps for each existing package detail
+                    existingPackageDetails.forEach(detail => {
+                        addStep(detail);
+                    });
+                } else {
+                    toggleMode('basic');
+                }
+                
+                // Set the file name if there's an existing image
+                const fileName = document.getElementById('file-name');
+                if (fileName) {
+                    fileName.textContent = '<?php echo $isEditMode && isset($packageData['image']) ? basename($packageData['image']) : ''; ?>';
+                }
+            } else {
+                toggleMode('basic'); // Start in basic mode for new packages
+            }
         }
 
         // Add form validation function
@@ -603,7 +705,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     return false;
                 }
                 
-                if (packageImage.length === 0) {
+                // Only require image for new packages, not when editing
+                if (!isEditMode && packageImage.length === 0) {
                     alert('Please select an image for the package.');
                     return false;
                 }
@@ -634,7 +737,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
-        <h1><i class="fas fa-suitcase"></i> Build Your Travel Package</h1>
+        <h1><i class="fas fa-suitcase"></i> <?php echo $isEditMode ? 'Edit' : 'Build' ?> Your Travel Package</h1>
         
         <div class="form-container">
             <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
@@ -653,13 +756,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="package-name">Package Name</label>
                     <div class="input-icon-wrapper">
                         <i class="fas fa-tag input-icon"></i>
-                        <input type="text" id="package-name" name="package_name" class="form-control has-icon" placeholder="Enter package name" required>
+                        <input type="text" id="package-name" name="package_name" class="form-control has-icon" placeholder="Enter package name" required value="<?php echo $isEditMode ? htmlspecialchars($packageData['package_name']) : ''; ?>">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="package-details">Package Details</label>
-                    <textarea id="package-details" name="details" class="form-control" placeholder="Describe your package..." required></textarea>
+                    <textarea id="package-details" name="details" class="form-control" placeholder="Describe your package..." required><?php echo $isEditMode ? htmlspecialchars($packageData['details']) : ''; ?></textarea>
                 </div>
 
                 <div class="form-group">
@@ -667,10 +770,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="file-input-wrapper">
                         <label class="file-input-label">
                             <i class="fas fa-cloud-upload-alt"></i> Choose Image
-                            <input type="file" id="package-image" name="package_image" class="file-input" accept=".jpg,.jpeg,.png" required onchange="updateFileName()">
+                            <input type="file" id="package-image" name="package_image" class="file-input" accept=".jpg,.jpeg,.png" <?php echo !$isEditMode ? 'required' : ''; ?> onchange="updateFileName()">
                         </label>
-                        <div id="file-name" class="file-name"></div>
+                        <div id="file-name" class="file-name"><?php echo $isEditMode ? basename($packageData['image']) : ''; ?></div>
                     </div>
+                    <?php if ($isEditMode && !empty($packageData['image'])): ?>
+                    <div style="margin-top: 10px; text-align: center;">
+                        <img src="../DesignPatterns/uploaded_img/<?php echo $packageData['image']; ?>" alt="Current Image" style="max-width: 200px; max-height: 150px; border-radius: 5px;">
+                        <p>Current image</p>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <div id="full-mode-section" class="full-mode">
@@ -685,11 +794,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <div class="action-buttons">
-                    <button type="button" class="btn btn-outline" onclick="window.history.back()">
+                    <button type="button" class="btn btn-outline" onclick="window.location.href='../profile.php'">
                         <i class="fas fa-arrow-left"></i> Cancel
                     </button>
                     <button type="submit" id="publish-button" class="btn btn-success">
-                        <i class="fas fa-paper-plane"></i> Publish Package
+                        <i class="fas fa-paper-plane"></i> <?php echo $isEditMode ? 'Update' : 'Publish' ?> Package
                     </button>
                 </div>
             </form>
@@ -697,3 +806,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </body>
 </html>
+
+
+

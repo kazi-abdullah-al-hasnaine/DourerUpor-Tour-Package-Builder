@@ -261,11 +261,6 @@ function formatDate($dateString) {
             font-size: 12px;
         }
         
-        .edit-profile {
-            text-align: center;
-            padding: 20px;
-        }
-        
         .no-packages {
             padding: 20px;
             text-align: center;
@@ -301,9 +296,7 @@ function formatDate($dateString) {
                     <div class="detail-value"><?php echo formatDate($userData['dob']); ?></div>
                 </div>
             </div>
-            <div class="edit-profile">
-                <a href="edit-profile.php?id=<?php echo $userData['id']; ?>" class="btn">Edit Profile</a>
-            </div>
+            <!-- Edit Profile button has been removed from here -->
         </div>
         
         <!-- Created Packages Section -->
@@ -323,7 +316,7 @@ function formatDate($dateString) {
                                 </div>
                             </div>
                             <div>
-                                <a href="edit-package.php?id=<?php echo $package['package_id']; ?>" class="btn btn-small">Edit</a>
+                                <a href="modules/buildPackages.php?id=<?php echo $package['package_id']; ?>" class="btn btn-small">Edit</a>
                             </div>
                         </div>
                     <?php endforeach; ?>
