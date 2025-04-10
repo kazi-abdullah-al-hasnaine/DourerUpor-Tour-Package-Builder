@@ -57,22 +57,46 @@ function getFollowedPackages($conn, $userId) {
 }
 
 // Function to get user notifications
+// function getUserNotifications($conn, $userId, $limit = 5) {
+//     $query = "SELECT n.id, n.message, n.created_at, n.is_read, n.package_id
+//               FROM notifications n 
+//               WHERE n.user_id = ? 
+//               ORDER BY n.created_at DESC
+//               LIMIT ?";
+//     $stmt = $conn->prepare($query);
+//     $stmt->execute([$userId, $limit]);
+    
+//     $notifications = [];
+//     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+//         $notifications[] = $row;
+//     }
+    
+//     return $notifications;
+// }
+
+
 function getUserNotifications($conn, $userId, $limit = 5) {
+    $limit = (int)$limit; // Sanitize to ensure it's an integer
+
     $query = "SELECT n.id, n.message, n.created_at, n.is_read, n.package_id
               FROM notifications n 
               WHERE n.user_id = ? 
               ORDER BY n.created_at DESC
-              LIMIT ?";
+              LIMIT $limit"; // Inject directly
+
     $stmt = $conn->prepare($query);
-    //$stmt->execute([$userId, $limit]);
-    
+    $stmt->execute([$userId]);
+
     $notifications = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $notifications[] = $row;
     }
-    
+
     return $notifications;
 }
+
+
+
 
 // Function to count unread notifications
 function countUnreadNotifications($conn, $userId) {
@@ -84,7 +108,7 @@ function countUnreadNotifications($conn, $userId) {
     return $result['count'] ?? 0;
 }
 
-// Function to display a notification
+// Function to display a notification -- Work from here 
 function displayNotification($notification) {
     $readClass = $notification['is_read'] ? 'read' : 'unread';
     $formattedDate = formatDate($notification['created_at'], true);

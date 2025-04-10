@@ -49,6 +49,8 @@ class PackageSubject implements Subject {
             foreach ($this->observers[$package_id] as $observer) {
                 $observer->update($package_id, $message);
             }
+        } else {
+            error_log("No observers found for package_id: $package_id");
         }
     }
     
