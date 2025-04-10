@@ -90,7 +90,7 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Package Reviews</title>
     <!-- CSS File Link -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -136,7 +136,7 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
     <!-- DISPLAYING ALL REVIEWS -->
     <section id="all-reviews">
         <div class="reviews-list">
-            <h3>Customer Reviews</h3>
+            <h3>All Reviews</h3>
             
             <div class="reviews-container">
                 <?php
@@ -145,10 +145,20 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
                         echo "
                         <div class='review-item'>
                             <h4>{$review->userName}</h4>
-                            <p>Rating: {$review->rating}/5</p><br>
-                            <p>{$review->comment}</p>
-                        </div>
-                        ";
+                            <p>Rating: 
+                            <span class='stars'>";
+                            for ($i = 1; $i <= 5; $i++) {
+                            if ($i <= $review->rating) {
+                                echo "<span class='filled'>&#9733;</span>"; 
+                            } else {
+                                echo "&#9733;"; 
+                                }
+                            }
+                        echo "</span>
+                        </p>";
+                        echo"
+                        <p>{$review->comment}</p>
+                        </div>";
                     endforeach;
                 else:
                     echo "
