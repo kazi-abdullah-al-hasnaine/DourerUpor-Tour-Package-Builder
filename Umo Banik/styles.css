@@ -621,3 +621,31 @@ input:focus{
 .stars .filled {
   color: gold;
 }
+
+.edit-form {
+  display: none;
+}
+
+.edit-form textarea{
+  height: 30px; 
+  width: 900px; 
+  border-radius: 5px; 
+  padding: 5px 10px; 
+  background-color: #f4fff8; 
+  border: 2px solid #f4fff8;
+  resize: none;
+  margin-top: 0.5rem;
+}
+
+.review-edit-btn, .review-delete-btn, .save-btn, .cancel-btn{
+  height: 30px;
+  width: 100px; 
+  border-radius: 5px; 
+  background-color: #f4fff8; 
+  border: 2px solid #f4fff8;
+  text-align: center;
+  font-weight: bold;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+

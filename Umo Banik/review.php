@@ -9,16 +9,28 @@ require_once('C:\xampp2\htdocs\website\DourerUpor-Tour-Package-Builder\Umo Banik
 $db = Database::getInstance();
 $conn = $db->getConnection();
 
+$email = $_SESSION['email'] ?? null;
+
+// Get the logged-in user's ID
+$stmt = $conn->prepare("SELECT id FROM user WHERE email = :email");
+$stmt->bindParam(':email', $email);
+$stmt->execute();
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
 // Define Review and ReviewCollection classes - Iterator design pattern
-class Review {
+class Reviews {
+    public $reviewId;
+    public $userID;
     public $userName;
     public $rating;
-    public $comment;
+    public $review;
     
-    public function __construct($userName, $rating, $comment) {
+    public function __construct($reviewId, $userID, $userName, $rating, $review) {
+        $this->reviewId = $reviewId;
+        $this->userID = $userID;
         $this->userName = $userName;
         $this->rating = $rating;
-        $this->comment = $comment;
+        $this->review = $review;
     }
 }
 
@@ -30,11 +42,11 @@ class ReviewCollection implements Iterator {
         $this->reviews = $reviews;
     }
     
-    public function addReview(Review $review): void {
+    public function addReview(Reviews $review): void {
         $this->reviews[] = $review;
     }
     
-    public function current(): Review {
+    public function current(): Reviews {
         return $this->reviews[$this->position];
     }
     
@@ -58,7 +70,7 @@ class ReviewCollection implements Iterator {
 // Fetch reviews using a function
 function getReviewsForPackage($conn, $packageId): ReviewCollection {
     $stmt = $conn->prepare("
-        SELECT u.name AS userName, r.rating, r.review
+        SELECT  r.review_id AS reviewId, r.user_id AS userID, u.name AS userName, r.rating, r.review
         FROM reviews r
         JOIN user u ON r.user_id = u.id
         WHERE r.package_id = ? ORDER BY r.review_publish_time DESC;
@@ -67,7 +79,7 @@ function getReviewsForPackage($conn, $packageId): ReviewCollection {
     
     $reviews = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $reviews[] = new Review($row['userName'], $row['rating'], $row['review']);
+        $reviews[] = new Reviews($row['reviewId'], $row['userID'], $row['userName'], $row['rating'], $row['review']);
     }
     
     return new ReviewCollection($reviews);
@@ -90,6 +102,9 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Package Reviews</title>
+    <!-- Bootstrap Link -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
     <!-- CSS File Link -->
     <link rel="stylesheet" href="C:\xampp2\htdocs\website\DourerUpor-Tour-Package-Builder\Umo Banik\styles.css">
 </head>
@@ -141,14 +156,15 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
             <div class="reviews-container">
                 <?php
                 if ($reviewCollection->valid()):
-                    foreach ($reviewCollection as $review):
+                    foreach ($reviewCollection as $reviews):
+                        $isUsersReview = ($reviews->userID == $user['id']);
                         echo "
                         <div class='review-item'>
-                            <h4>{$review->userName}</h4>
+                            <h4>{$reviews->userName}</h4>
                             <p>Rating: 
                             <span class='stars'>";
                             for ($i = 1; $i <= 5; $i++) {
-                            if ($i <= $review->rating) {
+                            if ($i <= $reviews->rating) {
                                 echo "<span class='filled'>&#9733;</span>"; 
                             } else {
                                 echo "&#9733;"; 
@@ -157,8 +173,48 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
                         echo "</span>
                         </p>";
                         echo"
-                        <p>{$review->comment}</p>
-                        </div>";
+                        <p>{$reviews->review}</p>";
+
+                        if ($isUsersReview):
+                            echo "
+                            <div class='review-actions'>
+                                <button class='review-edit-btn' onclick='showEditForm({$reviews->reviewId}, {$reviews->rating}, `{$reviews->review}`)'>
+                                    <i class='bi bi-pencil-square'></i> Edit
+                                </button>
+                                <form action='review-action.php' method='POST' style='display:inline;' onsubmit='return confirm(\"Are you sure you want to delete this review?\");'>
+                                    <input type='hidden' name='review_id' value='{$reviews->reviewId}'>
+                                    <input type='hidden' name='package_id' value='{$packageId}'>
+                                    <button type='submit' name='delete-review-btn' class='review-delete-btn'>
+                                        <i class='bi bi-trash3-fill'></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <div class='edit-form' id='edit-form-{$reviews->reviewId}'>
+                                <form action='review-action.php' method='POST'>
+                                    <div class='form-group'>
+                                        <label>Rating:</label>
+                                        <select class='form-control' name='rating' id='edit-rating-{$reviews->reviewId}' required>
+                                            <option value='1'>1 ★</option>
+                                            <option value='2'>2 ★★</option>
+                                            <option value='3'>3 ★★★</option>
+                                            <option value='4'>4 ★★★★</option>
+                                            <option value='5'>5 ★★★★★</option>
+                                        </select>
+                                    </div>
+                                    <div class='form-group'>
+                                        <br><label>Edit Your Review</label><br>
+                                        <textarea class='form-control' name='review' id='edit-review-{$reviews->reviewId}' required></textarea>
+                                    </div>
+                                    <input type='hidden' name='review_id' value='{$reviews->reviewId}'>
+                                    <input type='hidden' name='package_id' value='{$packageId}'>
+                                    <button type='submit' name='update-review-btn' class='save-btn'>Save Changes</button>
+                                    <button type='button' class='cancel-btn' onclick='hideEditForm({$reviews->reviewId})'>Cancel</button>
+                                    </form>
+                                </div>";
+                        endif;
+                        
+                        echo "</div>";
                     endforeach;
                 else:
                     echo "
@@ -173,5 +229,29 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
     </section>
     </section>
 
+    <script>
+        // Function to show edit form
+        function showEditForm(reviewId, rating, comment) {
+            
+            
+            // Show the specific edit form
+            const editForm = document.getElementById(`edit-form-${reviewId}`);
+            if (editForm) {
+                editForm.style.display = 'block';
+                
+                // Set current values
+                document.getElementById(`edit-rating-${reviewId}`).value = rating;
+                document.getElementById(`edit-review-${reviewId}`).value = comment;
+            }
+        }
+        
+        // Function to hide edit form
+        function hideEditForm(reviewId) {
+            const editForm = document.getElementById(`edit-form-${reviewId}`);
+            if (editForm) {
+                editForm.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
