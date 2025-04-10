@@ -3,6 +3,7 @@ session_start();
 
 include_once('../db_connection/db.php');
 include_once('../DesignPatterns/PackageBuilder.php');
+include_once('../DesignPatterns/PackageObserver.php'); // Include the Observer Pattern
 
 // Database connection
 $db = Database::getInstance();
@@ -112,6 +113,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Delete existing package details
             $stmt = $conn->prepare("DELETE FROM package_details WHERE package_id = ?");
             $stmt->execute([$packageId]);
+            
+            // Notify followers about the update
+            $packageSubject = PackageSubject::getInstance();
+            $packageSubject->loadFollowersAsObservers($packageId, $conn);
+            $packageSubject->notify($packageId, "Package '{$packageName}' has been updated with new details.");
         } else {
             // Insert new package
             $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
@@ -151,6 +157,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Update existing package
             $stmt = $conn->prepare("UPDATE packages SET package_name = ?, details = ?, image = ? WHERE package_id = ?");
             $stmt->execute([$packageName, $details, $imageName, $packageId]);
+            
+            // Notify followers about the update
+            $packageSubject = PackageSubject::getInstance();
+            $packageSubject->loadFollowersAsObservers($packageId, $conn);
+            $packageSubject->notify($packageId, "Package '{$packageName}' has been updated.");
         } else {
             // Insert new package
             $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
@@ -164,7 +175,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header("Location: ../profile.php");
     exit;
 }
+
+// Rest of your existing code remains the same
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -175,290 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
     
-<style>
-        /* Your existing CSS styles remain unchanged */
-        :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3f37c9;
-            --accent-color: #4895ef;
-            --text-color: #333;
-            --light-text: #666;
-            --background-color: #f8f9fa;
-            --card-bg: #ffffff;
-            --border-color: #e9ecef;
-            --success-color: #4cc9f0;
-            --danger-color: #f72585;
-            --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            --transition: all 0.3s ease;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            --border-radius: 8px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: var(--font-primary);
-            color: var(--text-color);
-            background-color: var(--background-color);
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 2rem;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        .form-container {
-            background-color: var(--card-bg);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            padding: 2rem;
-        }
-
-        .toggle-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 2rem;
-            background-color: var(--background-color);
-            border-radius: calc(var(--border-radius) - 2px);
-            padding: 0.5rem;
-        }
-
-        .toggle-btn {
-            background-color: transparent;
-            color: var(--light-text);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: calc(var(--border-radius) - 4px);
-            cursor: pointer;
-            font-weight: 500;
-            transition: var(--transition);
-        }
-
-        .toggle-btn.active {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--text-color);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            font-family: inherit;
-            font-size: 1rem;
-            color: var(--text-color);
-            background-color: white;
-            transition: var(--transition);
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-        }
-
-        .form-control::placeholder {
-            color: #adb5bd;
-        }
-
-        .input-icon-wrapper {
-            position: relative;
-        }
-
-        .input-icon {
-            position: absolute;
-            top: 50%;
-            left: 1rem;
-            transform: translateY(-50%);
-            color: var(--light-text);
-        }
-
-        .has-icon {
-            padding-left: 2.5rem;
-        }
-
-        textarea.form-control {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-input-label {
-            display: block;
-            padding: 0.75rem 1rem;
-            background-color: var(--background-color);
-            border: 1px dashed var(--border-color);
-            border-radius: var(--border-radius);
-            text-align: center;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .file-input-label:hover {
-            background-color: #e9ecef;
-        }
-
-        .file-input {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-
-        .file-name {
-            margin-top: 0.5rem;
-            text-align: center;
-            font-size: 0.875rem;
-            color: var(--light-text);
-        }
-
-        .steps-container {
-            margin-top: 2rem;
-        }
-
-        .step {
-            background-color: var(--background-color);
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
-
-        .step h4 {
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            color: var(--primary-color);
-        }
-
-        .step h4 i {
-            margin-right: 0.5rem;
-        }
-
-        .step-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .step-full {
-            grid-column: 1 / -1;
-        }
-
-        .remove-step {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background-color: transparent;
-            border: none;
-            color: var(--danger-color);
-            cursor: pointer;
-            transition: var(--transition);
-            width: auto;
-            padding: 0.25rem;
-        }
-
-        .remove-step:hover {
-            transform: scale(1.1);
-        }
-
-        .btn {
-            display: inline-block;
-            font-weight: 500;
-            text-align: center;
-            vertical-align: middle;
-            user-select: none;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            border-radius: var(--border-radius);
-            transition: var(--transition);
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .btn-outline {
-            background-color: transparent;
-            border: 1px solid var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .btn-outline:hover {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .btn-success {
-            background-color: var(--success-color);
-            color: white;
-        }
-
-        .btn-success:hover {
-            opacity: 0.9;
-        }
-
-        .btn:disabled {
-            background-color: #adb5bd;
-            cursor: not-allowed;
-        }
-
-        .action-buttons {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 2rem;
-        }
-
-        .full-mode {
-            display: none;
-        }
-
-        @media (max-width: 768px) {
-            .step-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="buildPackages.css">
     <script>
         let destinationList = <?php echo json_encode($destinations); ?>;
         let isEditMode = <?php echo $isEditMode ? 'true' : 'false'; ?>;
@@ -806,6 +537,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </body>
 </html>
-
-
 
