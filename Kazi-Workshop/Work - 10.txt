@@ -1,9 +1,9 @@
-- new database
-Buildpakages change
-css sep
-profile change
-css separed
-notification read dile (php)
-new design patternm - observer
+//- new database
+//Buildpakages change
+//css sep
+//profile change
+//css separed
+//notification read dile (php)
+//new design patternm - observer
 Login strategy 
 

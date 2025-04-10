@@ -5,8 +5,8 @@ $_SESSION['current-page'] = 'profile';
 $active_page = 'profile';
 
 // Set user ID (using ID 3 as requested)
-$userId = 3;
 
+$userId = $_SESSION['user_id'] ?? 'unknown';
 // Database connection
 require_once 'db_connection/db.php';
 $db = Database::getInstance();
@@ -56,10 +56,75 @@ function getFollowedPackages($conn, $userId) {
     return $packages;
 }
 
+// Function to get user notifications
+// function getUserNotifications($conn, $userId, $limit = 5) {
+//     $query = "SELECT n.id, n.message, n.created_at, n.is_read, n.package_id
+//               FROM notifications n 
+//               WHERE n.user_id = ? 
+//               ORDER BY n.created_at DESC
+//               LIMIT ?";
+//     $stmt = $conn->prepare($query);
+//     $stmt->execute([$userId, $limit]);
+    
+//     $notifications = [];
+//     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+//         $notifications[] = $row;
+//     }
+    
+//     return $notifications;
+// }
+
+
+function getUserNotifications($conn, $userId, $limit = 5) {
+    $limit = (int)$limit; // Sanitize to ensure it's an integer
+
+    $query = "SELECT n.id, n.message, n.created_at, n.is_read, n.package_id
+              FROM notifications n 
+              WHERE n.user_id = ? 
+              ORDER BY n.created_at DESC
+              LIMIT $limit"; // Inject directly
+
+    $stmt = $conn->prepare($query);
+    $stmt->execute([$userId]);
+
+    $notifications = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $notifications[] = $row;
+    }
+
+    return $notifications;
+}
+
+
+
+
+// Function to count unread notifications
+function countUnreadNotifications($conn, $userId) {
+    $query = "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0";
+    $stmt = $conn->prepare($query);
+    $stmt->execute([$userId]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    return $result['count'] ?? 0;
+}
+
+// Function to display a notification -- Work from here 
+function displayNotification($notification) {
+    $readClass = $notification['is_read'] ? 'read' : 'unread';
+    $formattedDate = formatDate($notification['created_at'], true);
+    
+    return "<div class='notification-item {$readClass}' data-id='{$notification['id']}'>
+                <div class='notification-message'>{$notification['message']}</div>
+                <div class='notification-time'>{$formattedDate}</div>
+            </div>";
+}
+
 // Get data from database
 $userData = getUserData($conn, $userId);
 $createdPackages = getCreatedPackages($conn, $userId);
 $followedPackages = getFollowedPackages($conn, $userId);
+$notifications = getUserNotifications($conn, $userId);
+$unreadCount = countUnreadNotifications($conn, $userId);
 
 // Generate user initials
 function getInitials($name) {
@@ -72,9 +137,22 @@ function getInitials($name) {
 }
 
 // Format date
-function formatDate($dateString) {
+function formatDate($dateString, $includeTime = false) {
     $date = new DateTime($dateString);
-    return $date->format('F j, Y');
+    return $includeTime ? $date->format('M j, Y g:i A') : $date->format('F j, Y');
+}
+
+// Mark notifications as read when viewed
+if (isset($_POST['mark_read']) && $_POST['mark_read'] == 1) {
+    $notificationId = $_POST['notification_id'] ?? 0;
+    
+    if ($notificationId > 0) {
+        $stmt = $conn->prepare("UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?");
+        $stmt->execute([$notificationId, $userId]);
+        
+        echo json_encode(['success' => true]);
+        exit;
+    }
 }
 ?>
 
@@ -84,187 +162,32 @@ function formatDate($dateString) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="profile.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* Additional styles for notifications */
+        .notification-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
         }
         
-        body {
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
+        .notification-item:hover {
+            background-color: #f9f9f9;
         }
         
-        .container {
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
+        .notification-item.unread {
+            background-color: #f0f7ff;
         }
         
-        .profile-card {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-        
-        .profile-header {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            padding: 30px 20px;
-            text-align: center;
-        }
-        
-        .profile-img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 5px solid rgba(255, 255, 255, 0.5);
-            margin: 0 auto 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #e0e0e0;
-            font-size: 40px;
-            color: #6a11cb;
-        }
-        
-        .profile-name {
-            font-size: 24px;
-            font-weight: 600;
+        .notification-message {
+            font-size: 14px;
             margin-bottom: 5px;
         }
         
-        .profile-email {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .profile-details {
-            padding: 20px;
-        }
-        
-        .detail-item {
-            padding: 15px 0;
-            border-bottom: 1px solid #eee;
-            display: flex;
-        }
-        
-        .detail-item:last-child {
-            border-bottom: none;
-        }
-        
-        .detail-label {
-            font-weight: 600;
-            width: 120px;
-            color: #555;
-        }
-        
-        .detail-value {
-            flex: 1;
-        }
-        
-        .error {
-            background-color: #ffebee;
-            color: #c62828;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            text-align: center;
-        }
-        
-        .section-card {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-        
-        .section-title {
-            padding: 15px 20px;
-            font-size: 18px;
-            font-weight: 600;
-            background-color: #f9f9f9;
-            border-bottom: 1px solid #eee;
-            color: #333;
-        }
-        
-        .section-content {
-            padding: 0;
-        }
-        
-        .package-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .package-item:last-child {
-            border-bottom: none;
-        }
-        
-        .package-info {
-            flex: 1;
-        }
-        
-        .package-name {
-            font-weight: 600;
-            color: #2575fc;
-            text-decoration: none;
-            font-size: 16px;
-        }
-        
-        .package-name:hover {
-            text-decoration: underline;
-        }
-        
-        .package-date, .package-status {
+        .notification-time {
             font-size: 12px;
-            color: #777;
-            margin-top: 3px;
-        }
-        
-        .package-status.pending {
-            color: #f57c00;
-        }
-        
-        .package-status.approved {
-            color: #43a047;
-        }
-        
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #2575fc;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: 500;
-            transition: background-color 0.3s;
-        }
-        
-        .btn:hover {
-            background-color: #1a5dc8;
-        }
-        
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-        
-        .no-packages {
-            padding: 20px;
-            text-align: center;
-            color: #777;
+            color: #666;
         }
     </style>
 </head>
@@ -274,6 +197,38 @@ function formatDate($dateString) {
         <!-- User Profile Card -->
         <div class="profile-card">
             <div class="profile-header">
+                <!-- Notification Icon -->
+                <div class="notification-container">
+                    <div class="notification-icon" id="notificationIcon">
+                        <i class="fas fa-bell" style="color: white; font-size: 18px;"></i>
+                        <?php if ($unreadCount > 0): ?>
+                        <div class="notification-badge"><?php echo $unreadCount; ?></div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <!-- Notification Dropdown -->
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div class="notification-header">
+                            <div class="notification-title">Notifications</div>
+                            <div class="notification-count"><?php echo $unreadCount; ?> new</div>
+                        </div>
+                        <div class="notification-list">
+                            <?php 
+                            if (count($notifications) > 0) {
+                                foreach ($notifications as $notification) {
+                                    echo displayNotification($notification);
+                                }
+                            } else {
+                                echo "<div class='no-notifications'>No notifications yet.</div>";
+                            }
+                            ?>
+                        </div>
+                        <div class="notification-footer">
+                            <a href="all-notifications.php">View all notifications</a>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="profile-img"><?php echo getInitials($userData['name']); ?></div>
                 <h2 class="profile-name"><?php echo htmlspecialchars($userData['name']); ?></h2>
                 <p class="profile-email"><?php echo htmlspecialchars($userData['email']); ?></p>
@@ -296,8 +251,9 @@ function formatDate($dateString) {
                     <div class="detail-value"><?php echo formatDate($userData['dob']); ?></div>
                 </div>
             </div>
-            <!-- Edit Profile button has been removed from here -->
         </div>
+        
+        <!-- Rest of the profile code remains unchanged -->
         
         <!-- Created Packages Section -->
         <div class="section-card">
@@ -353,5 +309,63 @@ function formatDate($dateString) {
             <div class="error">User not found!</div>
         <?php endif; ?>
     </div>
+
+    <script>
+        // Toggle notification dropdown
+        document.getElementById('notificationIcon').addEventListener('click', function() {
+            document.getElementById('notificationDropdown').classList.toggle('show');
+        });
+        
+        // Close the dropdown when clicking outside of it
+        window.addEventListener('click', function(event) {
+            if (!event.target.matches('.notification-icon') && 
+                !event.target.matches('.fas.fa-bell')) {
+                var dropdown = document.getElementById('notificationDropdown');
+                if (dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        });
+        
+        // Mark notifications as read when clicked
+        document.querySelectorAll('.notification-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const notificationId = this.getAttribute('data-id');
+                if (this.classList.contains('unread')) {
+                    fetch('mark_notification_read.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: 'mark_read=1&notification_id=' + notificationId
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.classList.remove('unread');
+                            this.classList.add('read');
+                            
+                            // Update unread count in the badge
+                            const badge = document.querySelector('.notification-badge');
+                            const countElement = document.querySelector('.notification-count');
+                            let currentCount = parseInt(badge.textContent);
+                            currentCount--;
+                            
+                            if (currentCount <= 0) {
+                                badge.style.display = 'none';
+                            } else {
+                                badge.textContent = currentCount;
+                            }
+                            
+                            countElement.textContent = currentCount + ' new';
+                        }
+                    });
+                }
+                
+                // You can also navigate to the package details page here if desired
+                // window.location.href = 'package-details.php?id=' + this.getAttribute('data-package-id');
+            });
+        });
+    </script>
 </body>
 </html>

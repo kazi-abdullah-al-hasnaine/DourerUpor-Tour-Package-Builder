@@ -17,7 +17,7 @@ class NormalLogin implements LoginStrategy
         if ($stmt->rowCount() > 0) {
             echo "Login successful!";
             session_start();
-            $_SESSION['email'] = $email;
+            //$_SESSION['email'] = $email;
             // Fetch the user_id from the database
             $stmt = $conn->prepare("SELECT id FROM user WHERE email = :email");
             $stmt->execute(['email' => $email]);
