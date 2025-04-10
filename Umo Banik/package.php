@@ -44,10 +44,9 @@ SELECT
     COUNT(DISTINCT r.review_id) AS TotalReview,
     SUM(DISTINCT pd.money_saved) as Saved,
     MAX(DISTINCT pd.day_count) as TotalDays,
-    MAX(CASE WHEN u.email = '{$email}' THEN u.id ELSE NULL END) AS LoggedInUserId
+    MAX(CASE WHEN u.email = :email THEN u.id ELSE NULL END) AS LoggedInUserId
 FROM 
     packages p
-
 LEFT JOIN 
     package_details pd ON p.package_id = pd.package_id
 LEFT JOIN 
@@ -55,16 +54,19 @@ LEFT JOIN
 LEFT JOIN 
     package_followers pf ON p.package_id = pf.package_id
 LEFT JOIN
-	user u ON pf.user_id = u.id
+    user u ON pf.user_id = u.id
+WHERE 
+    p.package_id = :packageId
 GROUP BY 
     p.package_id, p.package_name
-HAVING p.package_id = {$packageId}
 ORDER BY Followers DESC, Rating DESC
 ");
 
+// Bind both parameters before executing
+$selectData->bindParam(':packageId', $packageId, PDO::PARAM_INT);
+$selectData->bindParam(':email', $email);
 $selectData->execute();
 $rows = $selectData->fetchAll(PDO::FETCH_ASSOC);
-
 
 
 ?>
@@ -158,17 +160,20 @@ $rows = $selectData->fetchAll(PDO::FETCH_ASSOC);
     <?php 
     // --- Package steps ---
     $selectPackageDetails = $conn->prepare("
-    	SELECT p.package_id,pd.step_number as stepCount ,pd.day_count as dayCount, d.cost as DestCost, d.name as Destination, d.type as DestType, dp.name as pickup, pd.transport_type as TransType, pd.cost as transCost, pd.money_saved as Saved
-		FROM package_details pd 
-		LEFT JOIN packages p ON p.package_id = pd.package_id
-		LEFT JOIN destinations d ON d.destination_id = pd.destination_id
-		LEFT JOIN destinations dp ON dp.destination_id = pd.pickup
-		WHERE p.package_id = {$packageId}
-		ORDER BY pd.step_number ASC
-
-    	");
+    SELECT p.package_id, pd.step_number as stepCount, pd.day_count as dayCount, 
+           d.cost as DestCost, d.name as Destination, d.type as DestType, 
+           dp.name as pickup, pd.transport_type as TransType, pd.cost as transCost, 
+           pd.money_saved as Saved
+    FROM package_details pd 
+    LEFT JOIN packages p ON p.package_id = pd.package_id
+    LEFT JOIN destinations d ON d.destination_id = pd.destination_id
+    LEFT JOIN destinations dp ON dp.destination_id = pd.pickup
+    WHERE p.package_id = :packageId
+    ORDER BY pd.step_number ASC
+    ");
+    $selectPackageDetails->bindParam(':packageId', $packageId, PDO::PARAM_INT);
     $selectPackageDetails->execute();
-	$rows = $selectPackageDetails->fetchAll(PDO::FETCH_ASSOC);
+    $rows = $selectPackageDetails->fetchAll(PDO::FETCH_ASSOC);
     ?>
 
 
@@ -280,7 +285,7 @@ $rows = $selectData->fetchAll(PDO::FETCH_ASSOC);
 <!-- Review Section  -->
 <section id="reviews-section">
 <?php $packageIdForReview = $packageId; 
-    include('.\review_system\review.php')
+    include('review.php')
 ?>
 </section>
 

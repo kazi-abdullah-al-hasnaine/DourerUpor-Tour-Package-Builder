@@ -525,8 +525,18 @@ input:focus{
   font-size: 2.2rem;
 }
 
+.review select {
+  height: 30px; 
+  width: 110px; 
+  border-radius: 5px; 
+  background-color: #f4fff8; 
+  border: 2px solid #f4fff8;
+  margin-top: 0.5rem;
+  margin-left: 10px;
+}
+
 .review-form {
-  background: rgb(55,114,157, 0.7);
+  background: radial-gradient(circle, rgba(200,220,234,1) 0%, rgba(53,129,184,1) 100%);
   border: 1px solid var(--blue);
   border-radius: 10px;
   padding: 10px 10px;
@@ -553,22 +563,12 @@ input:focus{
   font-weight: bold;
 }
 
-.review select {
-  height: 30px; 
-  width: 110px; 
-  border-radius: 5px; 
-  background-color: #f4fff8; 
-  border: 2px solid #f4fff8;
-  margin-top: 0.5rem;
-  margin-left: 10px;
-}
-
-.review-item {
-  background: rgba(55, 114, 157, 0.7);
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 15px;
-  color: #000000;
+.review-form p{
+  font-size: 1.2rem; 
+  font-weight: bold;
+  text-align: center;
+  font-style: italic;
+  margin-top: 80px;
 }
 
 .review-form button{
@@ -588,14 +588,14 @@ input:focus{
   padding: 15px;
   max-width: 1200px;
   margin: 0 auto;
-  height: 250px;
+  height: 300px;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
   color: #000;
   overflow-y: auto;
 }
 
 .reviews-container h4{
-  height: 30px; 
+  height: 30px;
   width: 250px; 
   border-radius: 5px; 
   background-color: #f4fff8; 
@@ -603,6 +603,14 @@ input:focus{
   text-align: center;
   font-weight: bold;
   margin-bottom: 1rem;
+}
+
+.review-item {
+  background: radial-gradient(circle, rgba(200,220,234,1) 0%, rgba(53,129,184,1) 100%);;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 15px;
+  color: #000000;
 }
 
 .stars {

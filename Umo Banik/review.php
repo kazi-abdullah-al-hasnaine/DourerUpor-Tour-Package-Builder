@@ -6,7 +6,8 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Use your database connection
 require_once('C:\xampp2\htdocs\website\DourerUpor-Tour-Package-Builder\Umo Banik\db_connection\db.php');
-$conn = Database::getInstance()->getConnection();
+$db = Database::getInstance();
+$conn = $db->getConnection();
 
 // Define Review and ReviewCollection classes - Iterator design pattern
 class Review {
@@ -60,7 +61,7 @@ function getReviewsForPackage($conn, $packageId): ReviewCollection {
         SELECT u.name AS userName, r.rating, r.review
         FROM reviews r
         JOIN user u ON r.user_id = u.id
-        WHERE r.package_id = ?
+        WHERE r.package_id = ? ORDER BY r.review_publish_time DESC;
     ");
     $stmt->execute([$packageId]);
     
@@ -90,7 +91,7 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Package Reviews</title>
     <!-- CSS File Link -->
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="C:\xampp2\htdocs\website\DourerUpor-Tour-Package-Builder\Umo Banik\styles.css">
 </head>
 
 <body>
@@ -104,30 +105,29 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
             if (isset($_SESSION['email'])):
                 echo "
                 <div class='review-form'>
-                    <form action='submit_review.php' method='POST'>
-                        <div class='form-group'>
-                            <label>Rating:</label>
-                            <select class='form-control' name='rating' required>
-                                <option value='1'>1 ★</option>
-                                <option value='2'>2 ★★</option>
-                                <option value='3'>3 ★★★</option>
-                                <option value='4'>4 ★★★★</option>
-                                <option value='5'>5 ★★★★★</option>
-                            </select>
-                        </div>
-                        <div class='form-group'>
-                            <br><label>Drop a Review</label><br>
-                            <textarea class='form-control' name='comment' placeholder='Write your review here...' required></textarea>
-
-                        </div>
-                        <input type='hidden' name='packageId' value='{$packageId}'>
-                        <button type='submit' class='btn btn-custom'>Submit Review</button>
-                    </form>
+                    <form action='review-action.php' method='POST'>
+                    <div class='form-group'>
+                        <label>Rating:</label>
+                        <select class='form-control' id='user_rating' name='rating' required>
+                            <option value='1'>1 ★</option>
+                            <option value='2'>2 ★★</option>
+                            <option value='3'>3 ★★★</option>
+                            <option value='4'>4 ★★★★</option>
+                            <option value='5'>5 ★★★★★</option>
+                        </select>
+                    </div>
+                    <div class='form-group'>
+                        <br><label>Drop a Review</label><br>
+                        <textarea class='form-control' name='review' id='user_review' placeholder='Write your review here...' required></textarea>
+                    </div>
+                    <input type='hidden' name='package_id' value='{$packageId}'>
+                    <button type='submit' name='submit-review-btn' class='btn btn-custom'>Submit Review</button>
+                </form>
                 </div>";
             else:
                 echo "
                 <div class='review-form'>
-                    <p>You need to <a href='login.php'>login</a> to write a review.</p>
+                    <p>You need to <a href='login/login.html'>login</a> to write a review.</p>
                 </div>";
             endif;
             ?>
