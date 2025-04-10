@@ -3,6 +3,7 @@ session_start();
 
 include_once('../db_connection/db.php');
 include_once('../DesignPatterns/PackageBuilder.php');
+include_once('../DesignPatterns/PackageObserver.php'); // Include the Observer Pattern
 
 // Database connection
 $db = Database::getInstance();
@@ -112,29 +113,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Delete existing package details
             $stmt = $conn->prepare("DELETE FROM package_details WHERE package_id = ?");
             $stmt->execute([$packageId]);
+            
+            // Now insert all the new package details
+            if (!empty($destinationIds)) {
+                $stepNumber = 1; // Start from step 1
+                for ($i = 0; $i < count($destinationIds); $i++) {
+                    $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([
+                        $packageId,
+                        $destinationIds[$i],
+                        $stepNumber,
+                        $moneySaved[$i] ?? 0,
+                        $dayCount[$i] ?? 1,
+                        $pickupIds[$i] ?? null,
+                        $transportType[$i] ?? null,
+                        $transportCost[$i] ?? 0
+                    ]);
+                    $stepNumber++; // Increment step number for each destination
+                }
+            }
+            
+            // Notify followers about the update using Observer pattern
+            $packageSubject = PackageSubject::getInstance();
+            $packageSubject->loadFollowersAsObservers($packageId, $conn);
+            $packageSubject->notify($packageId, "Package '{$packageName}' has been updated with new details.");
+            
         } else {
             // Insert new package
             $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
                                 VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
             $stmt->execute([$packageId, $packageName, $buildBy, $details, $imageName]);
-        }
-
-        if (!empty($destinationIds)) {
-            $stepNumber = 1;
-            for ($i = 0; $i < count($destinationIds); $i++) {
-                $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
-                                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([
-                    $packageId,
-                    $destinationIds[$i],
-                    $stepNumber,
-                    $moneySaved[$i] ?? 0,
-                    $dayCount[$i] ?? 1,
-                    $pickupIds[$i] ?? null,
-                    $transportType[$i] ?? null,
-                    $transportCost[$i] ?? 0
-                ]);
-                $stepNumber++;
+            
+            // Insert package details
+            if (!empty($destinationIds)) {
+                $stepNumber = 1;
+                for ($i = 0; $i < count($destinationIds); $i++) {
+                    $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([
+                        $packageId,
+                        $destinationIds[$i],
+                        $stepNumber,
+                        $moneySaved[$i] ?? 0,
+                        $dayCount[$i] ?? 1,
+                        $pickupIds[$i] ?? null,
+                        $transportType[$i] ?? null,
+                        $transportCost[$i] ?? 0
+                    ]);
+                    $stepNumber++;
+                }
             }
         }
     } else { // Basic mode
@@ -151,6 +179,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Update existing package
             $stmt = $conn->prepare("UPDATE packages SET package_name = ?, details = ?, image = ? WHERE package_id = ?");
             $stmt->execute([$packageName, $details, $imageName, $packageId]);
+            
+            // Notify followers about the update
+            $packageSubject = PackageSubject::getInstance();
+            $packageSubject->loadFollowersAsObservers($packageId, $conn);
+            $packageSubject->notify($packageId, "Package '{$packageName}' has been updated.");
         } else {
             // Insert new package
             $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
@@ -164,9 +197,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header("Location: ../profile.php");
     exit;
 }
+
+// Rest of your existing code remains the same
 ?>
 
 <!DOCTYPE html>
+<!-- HTML remains unchanged -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -523,3 +559,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </body>
 </html>
+
