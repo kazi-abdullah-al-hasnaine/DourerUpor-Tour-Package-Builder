@@ -26,10 +26,6 @@ class NormalLogin implements LoginStrategy
 
 
             $_SESSION['user_id'] = $user['id']; // Set the user_id session
-
-
-
-
             header("Location: ../home.php");
         } else {
             echo "Invalid credentials!";

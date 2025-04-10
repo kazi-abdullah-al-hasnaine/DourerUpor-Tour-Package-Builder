@@ -29,7 +29,7 @@ class GoogleLogin implements LoginStrategy
 
         // Start a session and store user info
         session_start();
-        //$_SESSION['email'] = $email;
+        $_SESSION['email'] = $email;
         $_SESSION['user_id'] = $user['id']; // Set the user_id session
         
         header("Location: ../home.php");
