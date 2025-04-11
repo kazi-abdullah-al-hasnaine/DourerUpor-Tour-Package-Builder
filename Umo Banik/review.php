@@ -157,7 +157,6 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
                 <?php
                 if ($reviewCollection->valid()):
                     foreach ($reviewCollection as $reviews):
-                        $isUsersReview = ($reviews->userID == $user['id']);
                         echo "
                         <div class='review-item'>
                             <h4>{$reviews->userName}</h4>
@@ -175,7 +174,7 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
                         echo"
                         <p>{$reviews->review}</p>";
 
-                        if ($isUsersReview):
+                        if ($user && ($reviews->userID == $user['id'])):
                             echo "
                             <div class='review-actions'>
                                 <button class='review-edit-btn' onclick='showEditForm({$reviews->reviewId}, {$reviews->rating}, `{$reviews->review}`)'>
