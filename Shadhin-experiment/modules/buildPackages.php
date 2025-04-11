@@ -1,3 +1,4 @@
+<!-- Build package module -->
 <body>
 	<section id="build-and-share-section">
 		<div class="title-container"><h1>Build & share</h1></div>

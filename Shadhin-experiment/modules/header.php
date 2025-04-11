@@ -44,9 +44,9 @@ if (isset($_SESSION['email'])) {
                         <li><a <?php if ($active_page == "explore") {
                                     echo "class='active'";
                                 } ?> href="explore.php">Explore</a></li>
-                        <li><a <?php if ($active_page == "build&share") {
+                        <li><a <?php if ($active_page == "buildAndShare") {
                                     echo "class='active'";
-                                } ?> href="">Build & Share</a></li>
+                                } ?> href="buildAndShare.php">Build & Share</a></li>
                         <li><a href="">Wishlist</a></li>
                     </ul>
                 </div>

@@ -114,3 +114,19 @@ class BuildPackagesSection implements PageComponent
         include './modules/buildPackages.php';
     }
 }
+
+class BuildPackagesForm implements PageComponent
+{
+    private $page;
+
+    public function __construct(PageComponent $page)
+    {
+        $this->page = $page;
+    }
+
+    public function render()
+    {
+        $this->page->render();
+        include './modules/packageBuildForm.php';
+    }
+}
