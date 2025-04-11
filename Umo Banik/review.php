@@ -107,66 +107,68 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
             
             <div class="reviews-container">
                 <?php
-                if ($reviewCollection->valid()):
-                    foreach ($reviewCollection as $reviews):
+                $reviewIterator = $reviewCollection->createIterator();
+                if ($reviewIterator->hasNext()):
+                    while ($reviewIterator->hasNext()):
+                        $reviews = $reviewIterator->next();
                         echo "
                         <div class='review-item'>
                             <h4>{$reviews->userName}</h4>
                             <p>Rating: 
                             <span class='stars'>";
                             for ($i = 1; $i <= 5; $i++) {
-                            if ($i <= $reviews->rating) {
-                                echo "<span class='filled'>&#9733;</span>"; 
-                            } else {
-                                echo "&#9733;"; 
+                                if ($i <= $reviews->rating) {
+                                    echo "<span class='filled'>&#9733;</span>"; 
+                                } else {
+                                    echo "&#9733;"; 
                                 }
                             }
-                        echo "</span>
-                        </p>";
-                        echo"
-                        <p>{$reviews->review}</p>";
+                            echo "</span>
+                            </p>";
+                            echo"
+                            <p>{$reviews->review}</p>";
 
-                        if ($user && ($reviews->userID == $user['id'])):
-                            echo "
-                            <div class='review-actions'>
-                                <button class='review-edit-btn' onclick='showEditForm({$reviews->reviewId}, {$reviews->rating}, `{$reviews->review}`)'>
-                                    <i class='bi bi-pencil-square'></i> Edit
-                                </button>
-                                <form action='review-action.php' method='POST' style='display:inline;' onsubmit='return confirm(\"Are you sure you want to delete this review?\");'>
-                                    <input type='hidden' name='review_id' value='{$reviews->reviewId}'>
-                                    <input type='hidden' name='package_id' value='{$packageId}'>
-                                    <button type='submit' name='delete-review-btn' class='review-delete-btn'>
-                                        <i class='bi bi-trash3-fill'></i> Delete
+                            if ($user && ($reviews->userID == $user['id'])):
+                                echo "
+                                <div class='review-actions'>
+                                    <button class='review-edit-btn' onclick='showEditForm({$reviews->reviewId}, {$reviews->rating}, `{$reviews->review}`)'>
+                                        <i class='bi bi-pencil-square'></i> Edit
                                     </button>
-                                </form>
-                            </div>
-                            
-                            <div class='edit-form' id='edit-form-{$reviews->reviewId}'>
-                                <form action='review-action.php' method='POST'>
-                                    <div class='form-group'>
-                                        <label>Rating:</label>
-                                        <select class='form-control' name='rating' id='edit-rating-{$reviews->reviewId}' required>
-                                            <option value='1'>1 ★</option>
-                                            <option value='2'>2 ★★</option>
-                                            <option value='3'>3 ★★★</option>
-                                            <option value='4'>4 ★★★★</option>
-                                            <option value='5'>5 ★★★★★</option>
-                                        </select>
-                                    </div>
-                                    <div class='form-group'>
-                                        <br><label>Edit Your Review</label><br>
-                                        <textarea class='form-control' name='review' id='edit-review-{$reviews->reviewId}' required></textarea>
-                                    </div>
-                                    <input type='hidden' name='review_id' value='{$reviews->reviewId}'>
-                                    <input type='hidden' name='package_id' value='{$packageId}'>
-                                    <button type='submit' name='update-review-btn' class='save-btn'>Save Changes</button>
-                                    <button type='button' class='cancel-btn' onclick='hideEditForm({$reviews->reviewId})'>Cancel</button>
+                                    <form action='review-action.php' method='POST' style='display:inline;' onsubmit='return confirm(\"Are you sure you want to delete this review?\");'>
+                                        <input type='hidden' name='review_id' value='{$reviews->reviewId}'>
+                                        <input type='hidden' name='package_id' value='{$packageId}'>
+                                        <button type='submit' name='delete-review-btn' class='review-delete-btn'>
+                                            <i class='bi bi-trash3-fill'></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <div class='edit-form' id='edit-form-{$reviews->reviewId}'>
+                                    <form action='review-action.php' method='POST'>
+                                        <div class='form-group'>
+                                            <label>Rating:</label>
+                                            <select class='form-control' name='rating' id='edit-rating-{$reviews->reviewId}' required>
+                                                <option value='1'>1 ★</option>
+                                                <option value='2'>2 ★★</option>
+                                                <option value='3'>3 ★★★</option>
+                                                <option value='4'>4 ★★★★</option>
+                                                <option value='5'>5 ★★★★★</option>
+                                            </select>
+                                        </div>
+                                        <div class='form-group'>
+                                            <br><label>Edit Your Review</label><br>
+                                            <textarea class='form-control' name='review' id='edit-review-{$reviews->reviewId}' required></textarea>
+                                        </div>
+                                        <input type='hidden' name='review_id' value='{$reviews->reviewId}'>
+                                        <input type='hidden' name='package_id' value='{$packageId}'>
+                                        <button type='submit' name='update-review-btn' class='save-btn'>Save Changes</button>
+                                        <button type='button' class='cancel-btn' onclick='hideEditForm({$reviews->reviewId})'>Cancel</button>
                                     </form>
                                 </div>";
-                        endif;
-                        
-                        echo "</div>";
-                    endforeach;
+                            endif;
+                            
+                            echo "</div>";
+                    endwhile;
                 else:
                     echo "
                     <div class='review-item'>
@@ -183,8 +185,6 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
     <script>
         // Function to show edit form
         function showEditForm(reviewId, rating, comment) {
-            
-            
             // Show the specific edit form
             const editForm = document.getElementById(`edit-form-${reviewId}`);
             if (editForm) {

@@ -15,9 +15,33 @@ class Reviews {
     }
 }
 
-class ReviewCollection implements Iterator {
-    private $reviews = [];
+interface ReviewIterator {
+    public function hasNext(): bool;
+    public function next(): ?Reviews;
+}
+
+class ReviewCollectionIterator implements ReviewIterator {
+    private $reviews;
     private $position = 0;
+    
+    public function __construct(array $reviews) {
+        $this->reviews = $reviews;
+    }
+    
+    public function hasNext(): bool {
+        return $this->position < count($this->reviews);
+    }
+    
+    public function next(): ?Reviews {
+        if (!$this->hasNext()) {
+            return null;
+        }
+        return $this->reviews[$this->position++];
+    }
+}
+
+class ReviewCollection {
+    private $reviews = [];
     
     public function __construct($reviews = []) {
         $this->reviews = $reviews;
@@ -27,23 +51,7 @@ class ReviewCollection implements Iterator {
         $this->reviews[] = $review;
     }
     
-    public function current(): Reviews {
-        return $this->reviews[$this->position];
-    }
-    
-    public function key(): int {
-        return $this->position;
-    }
-    
-    public function next(): void {
-        ++$this->position;
-    }
-    
-    public function rewind(): void {
-        $this->position = 0;
-    }
-    
-    public function valid(): bool {
-        return isset($this->reviews[$this->position]);
+    public function createIterator(): ReviewIterator {
+        return new ReviewCollectionIterator($this->reviews);
     }
 }
