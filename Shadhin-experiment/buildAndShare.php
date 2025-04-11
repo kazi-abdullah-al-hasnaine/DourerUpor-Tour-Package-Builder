@@ -7,7 +7,10 @@ require_once 'db_connection/db.php';
 
 include "decoration.php";
 include "DesignPatterns/pageDecorator.php";
+include "DesignPatterns/PackageBuilder.php";
+include "DesignPatterns/PackageObserver.php";
 include "DesignPatterns/imageProxy.php";
+
 // Step 5: Page Implementations
 $homePage = new BasePage("It's your time to share <br>
 your experiance");

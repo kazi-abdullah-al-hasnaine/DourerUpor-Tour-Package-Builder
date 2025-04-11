@@ -36,6 +36,7 @@ LEFT JOIN
     package_followers pf ON p.package_id = pf.package_id
 LEFT JOIN
 	user u ON pf.user_id = u.id
+WHERE p.status = 'approved'
 GROUP BY 
     p.package_id, p.package_name
 ORDER BY Followers DESC, Rating DESC

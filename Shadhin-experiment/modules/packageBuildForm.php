@@ -2,11 +2,38 @@
 // session_start();
 
 // include_once('../db_connection/db.php');
-include_once('DesignPatterns/PackageBuilder.php');
+// include_once('../DesignPatterns/PackageBuilder.php');
+//include_once('../DesignPatterns/PackageObserver.php'); // Include the Observer Pattern
 
 // Database connection
+
 $db = Database::getInstance();
 $conn = $db->getConnection();
+
+// Check if we're editing an existing package
+$isEditMode = false;
+$packageData = null;
+$packageDetails = [];
+
+if (isset($_GET['id']) && !empty($_GET['id'])) {
+    $package_id = $_GET['id'];
+    $isEditMode = true;
+    
+    // Fetch package data
+    $stmt = $conn->prepare("SELECT * FROM packages WHERE package_id = ?");
+    $stmt->execute([$package_id]);
+    $packageData = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$packageData) {
+        echo "Package not found!";
+        exit;
+    }
+    
+    // Fetch package details if any exist (for full mode packages)
+    $stmt = $conn->prepare("SELECT * FROM package_details WHERE package_id = ? ORDER BY step_number");
+    $stmt->execute([$package_id]);
+    $packageDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
 // Fetch destinations (filtering only for Bangladesh)
 $destinations = [];
@@ -21,14 +48,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $details = $_POST['details'];
     $buildBy = $user_id;
     $mode = $_POST['mode'] ?? 'basic';
+    
+    // Handle package ID (new or existing)
+    if ($isEditMode) {
+        $packageId = $packageData['package_id'];
+    } else {
+        $stmt = $conn->query("SELECT MAX(package_id) as max_id FROM packages");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $packageId = ($result['max_id'] ?? 0) + 1;
+    }
 
-    $stmt = $conn->query("SELECT MAX(package_id) as max_id FROM packages");
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    $nextPackageId = ($result['max_id'] ?? 0) + 1;
+    $imageName = $packageData['image'] ?? ($packageId . '.jpg');
+    $imagePath = "img/package-cover/" . $imageName;
 
-    $imageName = $nextPackageId . '.jpg';
-    $imagePath = "../DesignPatterns/uploaded_img/" . $imageName;
-
+    // Handle image upload if a new image is provided
     if (!empty($_FILES['package_image']['name'])) {
         $allowedExtensions = ['jpg', 'jpeg', 'png'];
         $fileExtension = strtolower(pathinfo($_FILES['package_image']['name'], PATHINFO_EXTENSION));
@@ -73,22 +106,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $package = $builder->getPackage();
 
-        $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
+        if ($isEditMode) {
+            // Update existing package
+            $stmt = $conn->prepare("UPDATE packages SET package_name = ?, details = ?, image = ? WHERE package_id = ?");
+            $stmt->execute([$packageName, $details, $imageName, $packageId]);
+            
+            // Delete existing package details
+            $stmt = $conn->prepare("DELETE FROM package_details WHERE package_id = ?");
+            $stmt->execute([$packageId]);
+            
+            // Notify followers about the update
+            $packageSubject = PackageSubject::getInstance();
+            $packageSubject->loadFollowersAsObservers($packageId, $conn);
+            $packageSubject->notify($packageId, "Package '{$packageName}' has been updated with new details.");
+        } else {
+            // Insert new package
+            $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
                                 VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
-        $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
+            $stmt->execute([$packageId, $packageName, $buildBy, $details, $imageName]);
+        }
 
         if (!empty($destinationIds)) {
             $stepNumber = 1;
             for ($i = 0; $i < count($destinationIds); $i++) {
                 $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                // In the SQL insert statement
                 $stmt->execute([
-                    $nextPackageId,
+                    $packageId,
                     $destinationIds[$i],
                     $stepNumber,
                     $moneySaved[$i] ?? 0,
                     $dayCount[$i] ?? 1,
-                    $pickupIds[$i] ?? null,
+                    empty($pickupIds[$i]) ? null : $pickupIds[$i],  // Convert empty values to NULL
                     $transportType[$i] ?? null,
                     $transportCost[$i] ?? 0
                 ]);
@@ -105,311 +155,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $package = $builder->getPackage();
 
-        $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
+        if ($isEditMode) {
+            // Update existing package
+            $stmt = $conn->prepare("UPDATE packages SET package_name = ?, details = ?, image = ? WHERE package_id = ?");
+            $stmt->execute([$packageName, $details, $imageName, $packageId]);
+            
+            // Notify followers about the update
+            $packageSubject = PackageSubject::getInstance();
+            $packageSubject->loadFollowersAsObservers($packageId, $conn);
+            $packageSubject->notify($packageId, "Package '{$packageName}' has been updated.");
+        } else {
+            // Insert new package
+            $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
                                 VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
-        $stmt->execute([$nextPackageId, $packageName, $buildBy, $details, $imageName]);
+            $stmt->execute([$packageId, $packageName, $buildBy, $details, $imageName]);
+        }
     }
 
-    echo "Package successfully created!";
-    // Redirect to a success page or package list
-    // header("Location: package_list.php");
-    // exit;
+    // echo "Package successfully " . ($isEditMode ? "updated!" : "created!");
+    // header("Location: " . ($isEditMode ? "profile.php" : "buildAndShare.php"));
+
+    echo "<script>
+            alert('Package successfully " . ($isEditMode ? "updated!" : "created! wait for the admin approval!") . "');
+            window.location.href = '" . ($isEditMode ? "profile.php" : "buildAndShare.php") . "';
+        </script>";
+
+
+
+    // Redirect to profile page after saving
+    // header("Location: ../profile.php");
+    exit;
 }
+
+// Rest of your existing code remains the same
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Build a Package</title>
+    <title><?php echo $isEditMode ? 'Edit' : 'Build' ?> a Package</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Your existing CSS styles remain unchanged */
-        :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3f37c9;
-            --accent-color: #4895ef;
-            --text-color: #333;
-            --light-text: #666;
-            --background-color: #f8f9fa;
-            --card-bg: #ffffff;
-            --border-color: #e9ecef;
-            --success-color: #4cc9f0;
-            --danger-color: #f72585;
-            --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            --transition: all 0.3s ease;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            --border-radius: 8px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: var(--font-primary);
-            color: var(--text-color);
-            background-color: var(--background-color);
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 2rem;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        .form-container {
-            background-color: var(--card-bg);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            padding: 2rem;
-        }
-
-        .toggle-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 2rem;
-            background-color: var(--background-color);
-            border-radius: calc(var(--border-radius) - 2px);
-            padding: 0.5rem;
-        }
-
-        .toggle-btn {
-            background-color: transparent;
-            color: var(--light-text);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: calc(var(--border-radius) - 4px);
-            cursor: pointer;
-            font-weight: 500;
-            transition: var(--transition);
-        }
-
-        .toggle-btn.active {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--text-color);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            font-family: inherit;
-            font-size: 1rem;
-            color: var(--text-color);
-            background-color: white;
-            transition: var(--transition);
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-        }
-
-        .form-control::placeholder {
-            color: #adb5bd;
-        }
-
-        .input-icon-wrapper {
-            position: relative;
-        }
-
-        .input-icon {
-            position: absolute;
-            top: 50%;
-            left: 1rem;
-            transform: translateY(-50%);
-            color: var(--light-text);
-        }
-
-        .has-icon {
-            padding-left: 2.5rem;
-        }
-
-        textarea.form-control {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-input-label {
-            display: block;
-            padding: 0.75rem 1rem;
-            background-color: var(--background-color);
-            border: 1px dashed var(--border-color);
-            border-radius: var(--border-radius);
-            text-align: center;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .file-input-label:hover {
-            background-color: #e9ecef;
-        }
-
-        .file-input {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-
-        .file-name {
-            margin-top: 0.5rem;
-            text-align: center;
-            font-size: 0.875rem;
-            color: var(--light-text);
-        }
-
-        .steps-container {
-            margin-top: 2rem;
-        }
-
-        .step {
-            background-color: var(--background-color);
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
-
-        .step h4 {
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            color: var(--primary-color);
-        }
-
-        .step h4 i {
-            margin-right: 0.5rem;
-        }
-
-        .step-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .step-full {
-            grid-column: 1 / -1;
-        }
-
-        .remove-step {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background-color: transparent;
-            border: none;
-            color: var(--danger-color);
-            cursor: pointer;
-            transition: var(--transition);
-            width: auto;
-            padding: 0.25rem;
-        }
-
-        .remove-step:hover {
-            transform: scale(1.1);
-        }
-
-        .btn {
-            display: inline-block;
-            font-weight: 500;
-            text-align: center;
-            vertical-align: middle;
-            user-select: none;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            border-radius: var(--border-radius);
-            transition: var(--transition);
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .btn-outline {
-            background-color: transparent;
-            border: 1px solid var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .btn-outline:hover {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .btn-success {
-            background-color: var(--success-color);
-            color: white;
-        }
-
-        .btn-success:hover {
-            opacity: 0.9;
-        }
-
-        .btn:disabled {
-            background-color: #adb5bd;
-            cursor: not-allowed;
-        }
-
-        .action-buttons {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 2rem;
-        }
-
-        .full-mode {
-            display: none;
-        }
-
-        @media (max-width: 768px) {
-            .step-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+  
+    
+    <link rel="stylesheet" type="text/css" href="modules/moduleCSS/buildPackages.css">
     <script>
         let destinationList = <?php echo json_encode($destinations); ?>;
+        let isEditMode = <?php echo $isEditMode ? 'true' : 'false'; ?>;
+        let existingPackageDetails = <?php echo !empty($packageDetails) ? json_encode($packageDetails) : '[]'; ?>;
 
         function toggleMode(mode) {
             const basicBtn = document.getElementById('basic-mode-btn');
@@ -447,11 +242,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        function addStep() {
+        function addStep(destinationData = null) {
             let stepCount = document.querySelectorAll('.step').length + 1;
             let container = document.getElementById("steps-container");
             let step = document.createElement("div");
             step.className = "step";
+            
+            // Pre-fill values if we have destination data
+            const destinationId = destinationData ? destinationData.destination_id : '';
+            const destinationName = destinationData ? getDestinationNameById(destinationId) : '';
+            const destinationCost = destinationData ? getDestinationCostById(destinationId) : '';
+            const moneySaved = destinationData ? destinationData.money_saved : '';
+            const dayCount = destinationData ? destinationData.day_count : '';
+            const pickupId = destinationData ? destinationData.pickup : '';
+            const pickupName = pickupId ? getDestinationNameById(pickupId) : '';
+            const transportType = destinationData ? destinationData.transport_type : '';
+            const transportCost = destinationData ? destinationData.cost : '';
+            
             step.innerHTML = `
                 <h4><i class="fas fa-map-marker-alt"></i> Step ${stepCount}</h4>
                 <button type="button" class="remove-step" onclick="this.parentElement.remove(); renumberSteps(); checkPublishButton();"><i class="fas fa-times"></i></button>
@@ -461,19 +268,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label for="destination-${stepCount}">Destination</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-search input-icon"></i>
-                            <input type="text" id="destination-${stepCount}" class="form-control has-icon" placeholder="Search destination" oninput="selectDestination(this)" list="dest-list" required>
+                            <input type="text" id="destination-${stepCount}" class="form-control has-icon" placeholder="Search destination" oninput="selectDestination(this)" list="dest-list" required value="${destinationName}">
                             <datalist id="dest-list">
                                 ${destinationList.map(dest => `<option data-id="${dest.destination_id}" data-cost="${dest.cost}" value="${dest.name}"></option>`).join('')}
                             </datalist>
                         </div>
-                        <input type="hidden" name="destinations[]">
+                        <input type="hidden" name="destinations[]" value="${destinationId}">
                     </div>
                     
                     <div class="form-group">
                         <label>Destination Cost</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-dollar-sign input-icon"></i>
-                            <input type="number" name="cost[]" class="form-control has-icon" placeholder="Cost" readonly>
+                            <input type="number" name="cost[]" class="form-control has-icon" placeholder="Cost" readonly value="${destinationCost}">
                         </div>
                     </div>
                     
@@ -481,7 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Money Saved</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-piggy-bank input-icon"></i>
-                            <input type="number" name="money_saved[]" class="form-control has-icon" placeholder="Amount saved" required>
+                            <input type="number" name="money_saved[]" class="form-control has-icon" placeholder="Amount saved" required value="${moneySaved}">
                         </div>
                     </div>
                     
@@ -489,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Day Count</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-calendar-day input-icon"></i>
-                            <input type="number" name="day_count[]" class="form-control has-icon" placeholder="Number of days" required>
+                            <input type="number" name="day_count[]" class="form-control has-icon" placeholder="Number of days" required value="${dayCount}">
                         </div>
                     </div>
                     
@@ -497,19 +304,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Pickup Point</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-map-pin input-icon"></i>
-                            <input type="text" class="form-control has-icon" placeholder="Search pickup point" oninput="selectPickup(this)" list="pickup-list">
+                            <input type="text" class="form-control has-icon" placeholder="Search pickup point" oninput="selectPickup(this)" list="pickup-list" value="${pickupName}">
                             <datalist id="pickup-list">
                                 ${destinationList.map(dest => `<option data-id="${dest.destination_id}" value="${dest.name}"></option>`).join('')}
                             </datalist>
                         </div>
-                        <input type="hidden" name="pickup[]">
+                        <input type="hidden" name="pickup[]" value="${pickupId}">
                     </div>
                     
                     <div class="form-group">
                         <label>Transport Type</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-bus input-icon"></i>
-                            <input type="text" name="transport_type[]" class="form-control has-icon" placeholder="Bus, Train, etc.">
+                            <input type="text" name="transport_type[]" class="form-control has-icon" placeholder="Bus, Train, etc." value="${transportType}">
                         </div>
                     </div>
                     
@@ -517,13 +324,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Transport Cost</label>
                         <div class="input-icon-wrapper">
                             <i class="fas fa-dollar-sign input-icon"></i>
-                            <input type="number" name="transport_cost[]" class="form-control has-icon" placeholder="Transport cost">
+                            <input type="number" name="transport_cost[]" class="form-control has-icon" placeholder="Transport cost" value="${transportCost}">
                         </div>
                     </div>
                 </div>
             `;
             container.appendChild(step);
             checkPublishButton();
+        }
+        
+        function getDestinationNameById(id) {
+            for (let dest of destinationList) {
+                if (dest.destination_id == id) {
+                    return dest.name;
+                }
+            }
+            return '';
+        }
+        
+        function getDestinationCostById(id) {
+            for (let dest of destinationList) {
+                if (dest.destination_id == id) {
+                    return dest.cost;
+                }
+            }
+            return '';
         }
 
         function renumberSteps() {
@@ -580,12 +405,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (fileInput.files.length > 0) {
                 fileName.textContent = fileInput.files[0].name;
             } else {
-                fileName.textContent = '';
+                fileName.textContent = '<?php echo $isEditMode ? basename($packageData['image']) : ''; ?>';
             }
         }
 
         window.onload = function() {
-            toggleMode('basic'); // Start in basic mode
+            // If in edit mode and we have package details, determine the mode
+            if (isEditMode) {
+                if (existingPackageDetails.length > 0) {
+                    toggleMode('full');
+                    // Add steps for each existing package detail
+                    existingPackageDetails.forEach(detail => {
+                        addStep(detail);
+                    });
+                } else {
+                    toggleMode('basic');
+                }
+                
+                // Set the file name if there's an existing image
+                const fileName = document.getElementById('file-name');
+                if (fileName) {
+                    fileName.textContent = '<?php echo $isEditMode && isset($packageData['image']) ? basename($packageData['image']) : ''; ?>';
+                }
+            } else {
+                toggleMode('basic'); // Start in basic mode for new packages
+            }
         }
 
         // Add form validation function
@@ -603,7 +447,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     return false;
                 }
                 
-                if (packageImage.length === 0) {
+                // Only require image for new packages, not when editing
+                if (!isEditMode && packageImage.length === 0) {
                     alert('Please select an image for the package.');
                     return false;
                 }
@@ -634,7 +479,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
-        <h1><i class="fas fa-suitcase"></i> Build Your Travel Package</h1>
+        <h1><i class="fas fa-suitcase"></i> <?php echo $isEditMode ? 'Edit' : 'Build' ?> Your Travel Package</h1>
         
         <div class="form-container">
             <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
@@ -653,13 +498,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="package-name">Package Name</label>
                     <div class="input-icon-wrapper">
                         <i class="fas fa-tag input-icon"></i>
-                        <input type="text" id="package-name" name="package_name" class="form-control has-icon" placeholder="Enter package name" required>
+                        <input type="text" id="package-name" name="package_name" class="form-control has-icon" placeholder="Enter package name" required value="<?php echo $isEditMode ? htmlspecialchars($packageData['package_name']) : ''; ?>">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="package-details">Package Details</label>
-                    <textarea id="package-details" name="details" class="form-control" placeholder="Describe your package..." required></textarea>
+                    <textarea id="package-details" name="details" class="form-control" placeholder="Describe your package..." required><?php echo $isEditMode ? htmlspecialchars($packageData['details']) : ''; ?></textarea>
                 </div>
 
                 <div class="form-group">
@@ -667,10 +512,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="file-input-wrapper">
                         <label class="file-input-label">
                             <i class="fas fa-cloud-upload-alt"></i> Choose Image
-                            <input type="file" id="package-image" name="package_image" class="file-input" accept=".jpg,.jpeg,.png" required onchange="updateFileName()">
+                            <input type="file" id="package-image" name="package_image" class="file-input" accept=".jpg,.jpeg,.png" <?php echo !$isEditMode ? 'required' : ''; ?> onchange="updateFileName()">
                         </label>
-                        <div id="file-name" class="file-name"></div>
+                        <div id="file-name" class="file-name"><?php echo $isEditMode ? basename($packageData['image']) : ''; ?></div>
                     </div>
+                    <?php if ($isEditMode && !empty($packageData['image'])): ?>
+                    <div style="margin-top: 10px; text-align: center;">
+                        <img src="img/package-cover/<?php echo $packageData['image']; ?>" alt="Current Image" style="max-width: 200px; max-height: 150px; border-radius: 5px;">
+                        <p>Current image</p>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <div id="full-mode-section" class="full-mode">
@@ -685,11 +536,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <div class="action-buttons">
-                    <button type="button" class="btn btn-outline" onclick="window.history.back()">
+                    <button type="button" class="btn btn-outline" onclick="window.location.href='../profile.php'">
                         <i class="fas fa-arrow-left"></i> Cancel
                     </button>
                     <button type="submit" id="publish-button" class="btn btn-success">
-                        <i class="fas fa-paper-plane"></i> Publish Package
+                        <i class="fas fa-paper-plane"></i> <?php echo $isEditMode ? 'Update' : 'Publish' ?> Package
                     </button>
                 </div>
             </form>
@@ -697,3 +548,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </body>
 </html>
+

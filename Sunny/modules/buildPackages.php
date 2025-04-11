@@ -1,8 +1,8 @@
 <?php
-session_start();
+// session_start();
 
-include_once('../db_connection/db.php');
-include_once('../DesignPatterns/PackageBuilder.php');
+// include_once('../db_connection/db.php');
+// include_once('../DesignPatterns/PackageBuilder.php');
 include_once('../DesignPatterns/PackageObserver.php'); // Include the Observer Pattern
 
 // Database connection
