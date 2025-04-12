@@ -1,11 +1,11 @@
 <?php
-// Step 1: Define the Component Interface
+//  Define the Component Interface
 interface PageComponent
 {
     public function render();
 }
 
-// Step 2: Concrete Base Page
+// Concrete Base Page
 class BasePage implements PageComponent
 {
     // private $content;
@@ -59,7 +59,7 @@ class FooterDecorator implements PageComponent
     }
 }
 
-// Step 4: Additional Decorators for Page Sections
+// Additional Decorators for Page Sections
 
 class PopularSection implements PageComponent
 {
