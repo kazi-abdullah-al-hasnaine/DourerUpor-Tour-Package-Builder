@@ -54,4 +54,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $context->executeLogin($data);
     }
     
+    // Handle GitHub login (data sent via JSON)
+    if (isset($data["github-login"])) {
+        $context->setStrategy(new GitHubLogin());
+        $context->executeLogin($data);
+    }
+    
 }
