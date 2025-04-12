@@ -69,6 +69,12 @@ $selectData->execute();
 $rows = $selectData->fetchAll(PDO::FETCH_ASSOC);
 
 
+$statusQuery = $conn->prepare("SELECT status FROM packages WHERE package_id = :packageId ");
+$statusQuery->bindParam(':packageId', $packageId, PDO::PARAM_INT);
+$statusQuery->execute();
+$package_status = $statusQuery->fetchColumn();
+
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -283,11 +289,13 @@ $rows = $selectData->fetchAll(PDO::FETCH_ASSOC);
     </script>
 
 <!-- Review Section  -->
+<?php if ($package_status !== 'pending'): ?>
 <section id="reviews-section">
-<?php $packageIdForReview = $packageId; 
-    include('review.php')
-?>
+    <?php $packageIdForReview = $packageId; 
+        include('review.php');
+    ?>
 </section>
+<?php endif; ?>
 
 </body>
 </html>

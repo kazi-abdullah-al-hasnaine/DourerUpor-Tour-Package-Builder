@@ -2,8 +2,8 @@
 
 // admin_packages.php
 session_start();
-require_once('C:\xampp2\htdocs\website\DourerUpor-Tour-Package-Builder\Umo Banik\db_connection\db.php');
-include_once('C:\xampp2\htdocs\website\DourerUpor-Tour-Package-Builder\Umo Banik\DesignPatterns\approvalState.php');
+require_once('db_connection\db.php');
+include_once('DesignPatterns\approvalState.php');
 
 
 
