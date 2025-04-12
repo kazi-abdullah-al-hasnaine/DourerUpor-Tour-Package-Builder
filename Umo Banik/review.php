@@ -85,7 +85,7 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
                     </div>
                     <div class='form-group'>
                         <br><label>Drop a Review</label><br>
-                        <textarea class='form-control' name='review' id='user_review' placeholder='Write your review here...' required></textarea>
+                        <textarea class='form-control' name='review' id='user_review' placeholder='Drop your review here...' required></textarea>
                     </div>
                     <input type='hidden' name='package_id' value='{$packageId}'>
                     <button type='submit' name='submit-review-btn' class='btn btn-custom'>Submit Review</button>
