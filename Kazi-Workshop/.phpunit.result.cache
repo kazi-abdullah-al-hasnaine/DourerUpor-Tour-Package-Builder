@@ -1,0 +1,1 @@
+{"version":1,"defects":[],"times":{"DatabaseTest::testSingletonInstance":0.006,"DatabaseTest::testConnectionIsPDO":0}}
