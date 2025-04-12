@@ -1,6 +1,6 @@
 <?php 
 session_start(); 
-require_once('C:\xampp2\htdocs\website\DourerUpor-Tour-Package-Builder\Umo Banik\db_connection\db.php'); 
+require_once('db_connection\db.php'); 
 $db = Database::getInstance(); 
 $conn = $db->getConnection();  
 
