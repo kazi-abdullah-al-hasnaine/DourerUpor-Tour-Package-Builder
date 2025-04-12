@@ -1,12 +1,12 @@
 <?php
 
-// Step 1: Define the Image Interface
+// the Image Interface
 interface Image {
     public function display();
     public function getUrl();
 }
 
-// Step 2: Real Image Class
+//  Real Image Class
 class RealImage implements Image {
     private $filename;
     
@@ -28,7 +28,7 @@ class RealImage implements Image {
     }
 }
 
-// Step 3: Proxy Image Class (Lazy Loading)
+// Proxy Image Class (Lazy Loading)
 class ProxyImage implements Image {
     private $realImage;
     private $filename;
@@ -49,7 +49,7 @@ class ProxyImage implements Image {
     }
 }
 
-// Step 4: Usage in Different Modules
+//  Usage in Different Modules
 function displayModuleImage($imageName) {
     $image = new ProxyImage($imageName);
     $image->display();
