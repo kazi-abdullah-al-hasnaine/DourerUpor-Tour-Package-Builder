@@ -1,6 +1,4 @@
 <?php
-
-
 $active_page = $_SESSION['current-page'];
 
 // Getting username from DB for navigation bar
@@ -13,9 +11,6 @@ if (isset($_SESSION['email'])) {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     $username = explode(" ", $user['name'])[0];
 }
-
-
-
 ?>
 
 <!DOCTYPE html>
@@ -24,6 +19,7 @@ if (isset($_SESSION['email'])) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Include your CSS files here -->
 </head>
 
 <body>
@@ -47,7 +43,7 @@ if (isset($_SESSION['email'])) {
                         <li><a <?php if ($active_page == "buildAndShare") {
                                     echo "class='active'";
                                 } ?> href="buildAndShare.php">Build & Share</a></li>
-                        <li><a href="">Wishlist</a></li>
+                        <li><a href="Profile.php">Profile</a></li>
                     </ul>
                 </div>
                 <div>
@@ -78,22 +74,24 @@ if (isset($_SESSION['email'])) {
             <div class="hero-search-bar">
                 <div class="search-box-wrapper">
                     <input placeholder="Search your dream destination..." type="text" id="search-box" name="search-box">
-                    <button class="search-btn">🔍</button>
+                    <button class="search-btn" type="button">🔍</button>
                 </div>
-                </form>
+                <!-- Search results will appear here -->
             </div>
         </div>
     </section>
 
-
     <!-- ----For wishlist sidebar ----- -->
+    <?php 
+        // include "wishlist.php";
+    ?>
 
-<?php 
-    include "wishlist.php";
-?>
-<script>
-(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="YrrEV-HmhhBJr_IDWk8u-";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
-</script>
+    <!-- Add our search JavaScript -->
+    <script src="modules/backend/search.js"></script>
+
+    <script>
+    (function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="YrrEV-HmhhBJr_IDWk8u-";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
+    </script>
 </body>
 
 </html>
