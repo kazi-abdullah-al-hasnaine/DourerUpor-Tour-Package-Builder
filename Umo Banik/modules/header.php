@@ -14,8 +14,6 @@ if (isset($_SESSION['email'])) {
     $username = explode(" ", $user['name'])[0];
 }
 
-
-
 ?>
 
 <!DOCTYPE html>
@@ -77,10 +75,11 @@ if (isset($_SESSION['email'])) {
             </div>
             <div class="hero-search-bar">
                 <div class="search-box-wrapper">
-                    <input placeholder="Search your dream destination..." type="text" id="search-box" name="search-box">
-                    <button class="search-btn">🔍</button>
+                    <form action="search.php" method="GET">
+                        <input placeholder="Search your dream destination..." type="text" id="search-box" name="search-box">
+                        <button type="submit" class="search-btn">🔍</button>
+                    </form>
                 </div>
-                </form>
             </div>
         </div>
     </section>
