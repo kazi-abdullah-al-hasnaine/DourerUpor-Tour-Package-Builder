@@ -5,9 +5,6 @@ session_start();
 require_once('db_connection\db.php');
 include_once('DesignPatterns\approvalState.php');
 
-
-
-
 // Handle package approval/rejection actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['package_id']) && isset($_POST['action'])) {
