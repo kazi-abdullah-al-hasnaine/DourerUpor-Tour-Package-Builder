@@ -40,16 +40,18 @@ if (isset($_SESSION['email'])) {
                         <li><a <?php if ($active_page == "explore") {
                                     echo "class='active'";
                                 } ?> href="explore.php">Explore</a></li>
+                        <?php if (isset($_SESSION['email'])): ?>
                         <li><a <?php if ($active_page == "buildAndShare") {
                                     echo "class='active'";
-                                } ?> href="buildAndShare.php">Build & Share</a></li>
-                        <li><a href="Profile.php">Profile</a></li>
+                                } ?> href="buildAndShare.php">Build & Share</a></li>       
+                        <li><a href="Profile.php"><?php echo $username; ?></a></li>
+                        <?php endif ?>
                     </ul>
                 </div>
                 <div>
                     <?php if (isset($_SESSION['email'])): ?>
                         <form action="./Login/user-actions.php" method="post">
-                            <button type="Submit" class="theme-btn log-out-btn" title="Click to logout" name="log-out-btn"><?php echo $username; ?></button>
+                            <button type="Submit" class="theme-btn log-out-btn" title="Click to logout" name="log-out-btn">Log out</button>
                         </form>
 
                     <?php else: ?>

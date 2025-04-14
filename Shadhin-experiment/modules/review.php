@@ -20,7 +20,8 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 include('.\DesignPatterns\reviewIterator.php');
 
 // Fetch reviews using a function
-function getReviewsForPackage($conn, $packageId): ReviewCollection {
+function getReviewsForPackage($conn, $packageId): ReviewCollection
+{
     $stmt = $conn->prepare("
         SELECT  r.review_id AS reviewId, r.user_id AS userID, u.name AS userName, r.rating, r.review
         FROM reviews r
@@ -28,12 +29,12 @@ function getReviewsForPackage($conn, $packageId): ReviewCollection {
         WHERE r.package_id = ? ORDER BY r.review_publish_time DESC;
     ");
     $stmt->execute([$packageId]);
-    
+
     $reviews = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $reviews[] = new Reviews($row['reviewId'], $row['userID'], $row['userName'], $row['rating'], $row['review']);
     }
-    
+
     return new ReviewCollection($reviews);
 }
 
@@ -63,14 +64,14 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
 
 <body>
     <section id="review" class="review">
-    <!-- WRITE REVIEW -->
-    <section id="write-review">
-        <div class="write-review-container">
-            <h2>Review</h2>
-            
-            <?php
-            if (isset($_SESSION['email'])):
-                echo "
+        <!-- WRITE REVIEW -->
+        <section id="write-review">
+            <div class="write-review-container">
+                <h2>Drop a review</h2>
+
+                <?php
+                if (isset($_SESSION['email'])):
+                    echo "
                 <div class='review-form'>
                     <form action='modules/backend/review-action.php' method='POST'>
                     <div class='form-group'>
@@ -91,41 +92,41 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
                     <button type='submit' name='submit-review-btn' class='btn btn-custom'>Submit Review</button>
                 </form>
                 </div>";
-            else:
-                echo "
+                else:
+                    echo "
                 <div class='review-form'>
                     <p>You need to <a href='login/login.html'>login</a> to write a review.</p>
                 </div>";
-            endif;
-            ?>
-        </div>
-    </section> 
-    <!-- DISPLAYING ALL REVIEWS -->
-    <section id="all-reviews">
-        <div class="reviews-list">
-            <h3>All Reviews</h3>
-            
-            <div class="reviews-container">
-                <?php
-                $reviewIterator = $reviewCollection->createIterator();
-                if ($reviewIterator->hasNext()):
-                    while ($reviewIterator->hasNext()):
-                        $reviews = $reviewIterator->next();
-                        echo "
+                endif;
+                ?>
+            </div>
+        </section>
+        <!-- DISPLAYING ALL REVIEWS -->
+        <section id="all-reviews">
+            <div class="reviews-list">
+                <h3>All Reviews</h3>
+
+                <div class="reviews-container">
+                    <?php
+                    $reviewIterator = $reviewCollection->createIterator();
+                    if ($reviewIterator->hasNext()):
+                        while ($reviewIterator->hasNext()):
+                            $reviews = $reviewIterator->next();
+                            echo "
                         <div class='review-item'>
                             <h4>{$reviews->userName}</h4>
                             <p>Rating: 
                             <span class='stars'>";
                             for ($i = 1; $i <= 5; $i++) {
                                 if ($i <= $reviews->rating) {
-                                    echo "<span class='filled'>&#9733;</span>"; 
+                                    echo "<span class='filled'>&#9733;</span>";
                                 } else {
-                                    echo "&#9733;"; 
+                                    echo "&#9733;";
                                 }
                             }
                             echo "</span>
                             </p>";
-                            echo"
+                            echo "
                             <p>{$reviews->review}</p>";
 
                             if ($user && ($reviews->userID == $user['id'])):
@@ -166,20 +167,20 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
                                     </form>
                                 </div>";
                             endif;
-                            
+
                             echo "</div>";
-                    endwhile;
-                else:
-                    echo "
+                        endwhile;
+                    else:
+                        echo "
                     <div class='review-item'>
                         <p>No reviews yet.</p>
                     </div>
                     ";
-                endif;
-                ?>
+                    endif;
+                    ?>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
     </section>
 
     <script>
@@ -189,13 +190,13 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
             const editForm = document.getElementById(`edit-form-${reviewId}`);
             if (editForm) {
                 editForm.style.display = 'block';
-                
+
                 // Set current values
                 document.getElementById(`edit-rating-${reviewId}`).value = rating;
                 document.getElementById(`edit-review-${reviewId}`).value = comment;
             }
         }
-        
+
         // Function to hide edit form
         function hideEditForm(reviewId) {
             const editForm = document.getElementById(`edit-form-${reviewId}`);
@@ -205,4 +206,5 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
         }
     </script>
 </body>
+
 </html>

@@ -261,7 +261,7 @@ if (isset($_POST['mark_read']) && $_POST['mark_read'] == 1) {
                     <?php foreach ($createdPackages as $package): ?>
                         <div class="package-item">
                             <div class="package-info">
-                                <a href="package-details.php?id=<?php echo $package['package_id']; ?>" class="package-name">
+                                <a href="package.php?id=<?php echo $package['package_id']; ?>" class="package-name">
                                     <?php echo htmlspecialchars($package['package_name']); ?>
                                 </a>
                                 <div class="package-date">Created on: <?php echo formatDate($package['publish_time']); ?></div>
@@ -288,14 +288,14 @@ if (isset($_POST['mark_read']) && $_POST['mark_read'] == 1) {
                     <?php foreach ($followedPackages as $package): ?>
                         <div class="package-item">
                             <div class="package-info">
-                                <a href="package-details.php?id=<?php echo $package['package_id']; ?>" class="package-name">
+                                <a href="package.php?id=<?php echo $package['package_id']; ?>" class="package-name">
                                     <?php echo htmlspecialchars($package['package_name']); ?>
                                 </a>
                                 <div class="package-date">Followed on: <?php echo formatDate($package['time']); ?></div>
                             </div>
-                            <div>
+                            <!-- <div>
                                 <a href="unfollow-package.php?id=<?php echo $package['package_id']; ?>&user_id=<?php echo $userId; ?>" class="btn btn-small">Unfollow</a>
-                            </div>
+                            </div> -->
                         </div>
                     <?php endforeach; ?>
                 <?php else: ?>
