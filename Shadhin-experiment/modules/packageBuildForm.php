@@ -477,9 +477,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </script>
 </head>
-<body>
+<body id= "build-package-form">
     <div class="container">
-        <h1><i class="fas fa-suitcase"></i> <?php echo $isEditMode ? 'Edit' : 'Build' ?> Your Travel Package</h1>
+        <h1 class="build-title"><i class="fas fa-suitcase"></i> <?php echo $isEditMode ? 'Edit' : 'Build' ?> Your Travel Package</h1>
         
         <div class="form-container">
             <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">

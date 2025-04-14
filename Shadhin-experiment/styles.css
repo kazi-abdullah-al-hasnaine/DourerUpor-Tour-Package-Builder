@@ -62,14 +62,16 @@ nav ul li a {
 }
 
 nav ul li a:hover {
-  color: var(--primary);
+  color: var(--secondary);
+  /* font-weight: bold; */
   transition-duration: .3s;
 }
 
 /*Active Navigation page*/
 .active {
-  text-decoration: underline;
-  color: var(--primary);
+  /* text-decoration: bold; */
+  font-weight: bold;
+  color: var(--secondary);
 }
 
 /*----basic design for theme button----*/
@@ -332,10 +334,31 @@ input:focus {
   width: fit-content;
   margin: 0 auto;
 }
+/* ----------------Footer Design---------------- */
 
+#footer {
+  background-color: var(--white);
+  color: var(--blue);
+  padding: 20px 0;
+  /* margin-top: 100px; */
+  text-align: center;
+  padding: 50px 0;
+}
+#footer a{
+  text-decoration: underline;
+  cursor: pointer;
+  color: var(--blue);
+  font-weight: bold;
+  transition-duration: .3s;
+}
+#footer a:hover{
+  color: var(--black);
+  transition-duration: .3s;
+}
 
 /*----------------Wishlist design----------------*/
 /*----------------Wishlist bar------------------*/
+/* Wishlish bar removed */
 .wishlist-sidebar {
   position: fixed;
   top: 0;

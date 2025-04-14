@@ -119,9 +119,6 @@ $package_status = $statusQuery->fetchColumn();
                     <?php endif ?>
                 </div>
  </nav>
- <?php 
-    // include "modules/wishlist.php";
- ?>
  <section id="package-details">
         <div class="package-details-container">
         <?php foreach ($rows as $row): 
@@ -300,6 +297,11 @@ $package_status = $statusQuery->fetchColumn();
     ?>
 </section>
 <?php endif; ?>
+
+<?php 
+    // include "modules/wishlist.php";
+    include "modules/footer.php";
+ ?>
 
 </body>
 </html>
