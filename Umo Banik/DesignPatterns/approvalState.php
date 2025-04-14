@@ -91,6 +91,18 @@ class Package {
         }
     }
     
+    // Add the getId method
+    public function getId() {
+        return $this->packageId;
+    }
+    
+    // Add the getPackageInfo method
+    private function getPackageInfo($packageId) {
+        $stmt = $this->conn->prepare("SELECT * FROM packages WHERE package_id = ?");
+        $stmt->execute([$packageId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
     private function loadPackage() {
         $stmt = $this->conn->prepare("SELECT package_name, status FROM packages WHERE package_id = ?");
         $stmt->execute([$this->packageId]);
@@ -130,16 +142,20 @@ class Package {
         return false;
     }
     
-    public function reject() {
+    public function reject($feedback = '') {
         if ($this->state->reject($this)) {
-            // Notify the package creator that their package was rejected
-            $this->notifyCreator('rejected');
+            // Update the database with rejection feedback
+            $stmt = $this->conn->prepare("UPDATE packages SET rejection_feedback = ? WHERE package_id = ?");
+            $stmt->execute([$feedback, $this->packageId]);
+            
+            // Notify the creator that their package was rejected with feedback
+            $this->notifyCreator('rejected', $feedback);
             return true;
         }
         return false;
     }
     
-    private function notifyCreator($action) {
+    private function notifyCreator($action, $feedback = '') {
         // Get the user who built this package
         $stmt = $this->conn->prepare("SELECT build_by FROM packages WHERE package_id = ?");
         $stmt->execute([$this->packageId]);
@@ -147,7 +163,12 @@ class Package {
         
         if ($result) {
             $userId = $result['build_by'];
-            $message = "Your package '{$this->packageName}' has been {$action}.";
+            
+            if ($action === 'rejected' && !empty($feedback)) {
+                $message = "Your package '{$this->packageName}' has been {$action}. Feedback: {$feedback}";
+            } else {
+                $message = "Your package '{$this->packageName}' has been {$action}.";
+            }
             
             // Insert notification
             $stmt = $this->conn->prepare("INSERT INTO notifications (user_id, package_id, message, created_at) VALUES (?, ?, ?, NOW())");

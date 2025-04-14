@@ -28,7 +28,7 @@ function getUserData($conn, $userId) {
 
 // Function to get packages created by user
 function getCreatedPackages($conn, $userId) {
-    $query = "SELECT package_id, package_name, publish_time, status FROM packages WHERE build_by = ?";
+    $query = "SELECT package_id, package_name, publish_time, status, rejection_feedback FROM packages WHERE build_by = ?";
     $stmt = $conn->prepare($query);
     $stmt->execute([$userId]);
     
@@ -259,6 +259,7 @@ if (isset($_POST['mark_read']) && $_POST['mark_read'] == 1) {
             <div class="section-content">
                 <?php if (count($createdPackages) > 0): ?>
                     <?php foreach ($createdPackages as $package): ?>
+                       <!-- Inside the Created Packages Section -->
                         <div class="package-item">
                             <div class="package-info">
                                 <a href="package-details.php?id=<?php echo $package['package_id']; ?>" class="package-name">
@@ -268,9 +269,17 @@ if (isset($_POST['mark_read']) && $_POST['mark_read'] == 1) {
                                 <div class="package-status <?php echo $package['status']; ?>">
                                     Status: <?php echo ucfirst($package['status']); ?>
                                 </div>
+                                
+                                <?php if ($package['status'] == 'rejected' && !empty($package['rejection_feedback'])): ?>
+                                <div class="rejection-feedback">
+                                    <i class="fas fa-info-circle"></i> Feedback: <?php echo htmlspecialchars($package['rejection_feedback']); ?>
+                                </div>
+                                <?php endif; ?>
                             </div>
                             <div>
-                                <a href="buildAndShare.php?id=<?php echo $package['package_id']; ?>" class="btn btn-small">Edit</a>
+                                <a href="buildAndShare.php?id=<?php echo $package['package_id']; ?>" class="btn btn-small">
+                                    <?php echo ($package['status'] == 'rejected') ? 'Edit & Resubmit' : 'Edit'; ?>
+                                </a>
                             </div>
                         </div>
                     <?php endforeach; ?>

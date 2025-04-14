@@ -1,7 +1,7 @@
 <?php
 // session_start();
 
-// include_once('../db_connection/db.php');
+require_once('db_connection\db.php');
 // include_once('../DesignPatterns/PackageBuilder.php');
 //include_once('../DesignPatterns/PackageObserver.php'); // Include the Observer Pattern
 
@@ -108,9 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($isEditMode) {
             // Update existing package
-            $stmt = $conn->prepare("UPDATE packages SET package_name = ?, details = ?, image = ? WHERE package_id = ?");
+            $stmt = $conn->prepare("UPDATE packages SET package_name = ?, details = ?, image = ?, status = 'pending', rejection_feedback = NULL WHERE package_id = ?");
             $stmt->execute([$packageName, $details, $imageName, $packageId]);
-            
+
             // Delete existing package details
             $stmt = $conn->prepare("DELETE FROM package_details WHERE package_id = ?");
             $stmt->execute([$packageId]);
@@ -118,11 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Notify followers about the update
             $packageSubject = PackageSubject::getInstance();
             $packageSubject->loadFollowersAsObservers($packageId, $conn);
-            $packageSubject->notify($packageId, "Package '{$packageName}' has been updated with new details.");
+            $packageSubject->notify($packageId, "Package '{$packageName}' has been updated and is pending approval.");
         } else {
             // Insert new package
             $stmt = $conn->prepare("INSERT INTO packages (package_id, package_name, publish_time, build_by, status, details, image) 
-                                VALUES (?, ?, NOW(), ?, 'Pending', ?, ?)");
+                                VALUES (?, ?, NOW(), ?, 'pending', ?, ?)");
             $stmt->execute([$packageId, $packageName, $buildBy, $details, $imageName]);
         }
 
@@ -131,14 +131,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             for ($i = 0; $i < count($destinationIds); $i++) {
                 $stmt = $conn->prepare("INSERT INTO package_details (package_id, destination_id, step_number, money_saved, day_count, pickup, transport_type, cost) 
                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                // In the SQL insert statement
+
+                $pickupValue = null;
+                if (!empty($pickupIds[$i])) {
+                    // Verify the pickup ID actually exists in the destinations table
+                    $checkStmt = $conn->prepare("SELECT destination_id FROM destinations WHERE destination_id = ?");
+                    $checkStmt->execute([$pickupIds[$i]]);
+                    if ($checkStmt->fetch()) {
+                        $pickupValue = $pickupIds[$i];
+                    }
+                }
+                
                 $stmt->execute([
                     $packageId,
                     $destinationIds[$i],
                     $stepNumber,
                     $moneySaved[$i] ?? 0,
                     $dayCount[$i] ?? 1,
-                    empty($pickupIds[$i]) ? null : $pickupIds[$i],  // Convert empty values to NULL
+                    $pickupValue,  // Use the validated pickup value
                     $transportType[$i] ?? null,
                     $transportCost[$i] ?? 0
                 ]);
@@ -157,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($isEditMode) {
             // Update existing package
-            $stmt = $conn->prepare("UPDATE packages SET package_name = ?, details = ?, image = ? WHERE package_id = ?");
+            $stmt = $conn->prepare("UPDATE packages SET package_name = ?, details = ?, image = ?, status = 'pending', rejection_feedback = NULL WHERE package_id = ?");
             $stmt->execute([$packageName, $details, $imageName, $packageId]);
             
             // Notify followers about the update
@@ -378,11 +388,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             let hiddenPickup = parentElement.querySelector('input[name="pickup[]"]');
             let options = document.getElementById("pickup-list").options;
             
+            // Reset the pickup ID if the input is cleared
+            if (!input.value.trim()) {
+                hiddenPickup.value = '';
+                return;
+            }
+            
+            // Only set the pickup ID if a valid match is found
+            let found = false;
             for (let option of options) {
                 if (option.value === input.value) {
                     hiddenPickup.value = option.dataset.id;
+                    found = true;
                     break;
                 }
+            }
+            
+            // If no match was found, clear the input and hidden value
+            if (!found) {
+                hiddenPickup.value = '';
+                // Optionally alert the user
+                // alert('Invalid pickup location selected');
             }
         }
 

@@ -59,7 +59,7 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <!-- CSS File Link -->
-    <link rel="stylesheet" href="C:\xampp2\htdocs\website\DourerUpor-Tour-Package-Builder\Umo Banik\styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>

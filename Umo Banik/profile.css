@@ -286,3 +286,16 @@ body {
 .show {
     display: block;
 }
+
+.rejection-feedback {
+    margin-top: 8px;
+    padding: 10px;
+    background-color: #fff8e1;
+    border-left: 4px solid #ffc107;
+    font-size: 0.9em;
+}
+
+.package-status.rejected {
+    color: #d32f2f;
+    background-color: #ffebee;
+}
