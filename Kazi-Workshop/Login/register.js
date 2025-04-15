@@ -37,6 +37,7 @@ googleLogin.addEventListener("click", function () {
             
             // Send user data to PHP backend
             sendUserDataToBackend(userData);
+            window.location.href = "../home.php";
         })
         .catch((error) => {
             console.error("Error Code:", error.code);
@@ -65,7 +66,6 @@ githubLogin.addEventListener("click", function () {
                 "email": user.email,
                 "name": user.displayName
             };
-            
             // Send user data to PHP backend
             sendUserDataToBackend(userData);
         })
@@ -87,12 +87,9 @@ function sendUserDataToBackend(userData) {
         body: JSON.stringify(userData)
     })
     .then(response => {
-        console.log("Server Response Status:", response.status);
-        window.location.href = "../home.php";
+        console.log("Server Response Status:", response.status); 
     })
     .catch(error => {
         console.error("Error during fetch:", error);
-        window.location.href = "../home.php";
-        // Handle error
     });
 }
