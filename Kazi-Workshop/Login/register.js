@@ -88,8 +88,10 @@ function sendUserDataToBackend(userData) {
     })
     .then(response => {
         console.log("Server Response Status:", response.status); 
+        window.location.href = "../home.php";
     })
     .catch(error => {
         console.error("Error during fetch:", error);
+        window.location.href = "../home.php";
     });
 }
