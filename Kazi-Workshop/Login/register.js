@@ -1,7 +1,6 @@
 // Firebase Imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.4.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.4.1/firebase-auth.js";
-import { GithubAuthProvider } from "https://www.gstatic.com/firebasejs/9.4.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, GithubAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.4.1/firebase-auth.js";
 
 // Firebase Config
 const firebaseConfig = {
@@ -21,25 +20,36 @@ auth.languageCode = 'en';
 // Google Login
 const googleProvider = new GoogleAuthProvider();
 const googleLogin = document.getElementById("google-login-btn");
+
 if (googleLogin) {
     googleLogin.addEventListener("click", function () {
         signInWithPopup(auth, googleProvider)
             .then((result) => {
                 const user = result.user;
+
                 const userData = {
                     "google-login": true,
                     "email": user.email,
                     "name": user.displayName
                 };
-                sendUserDataToBackend(userData)
-                    .then(response => {
-                        console.log("Google login: Server response status:", response.status);
-                        window.location.href = "../home.php";
-                    })
-                    .catch(error => {
-                        console.error("Google login: Error sending to backend:", error);
-                        window.location.href = "../home.php";
-                    });
+
+                fetch("user-actions.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(userData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Google login: Server Response:", data);
+                    window.location.href = "../home.php";
+                })
+                .catch(error => {
+                    console.error("Google login: Error sending to backend:", error);
+                    window.location.href = "../home.php";
+                });
+
             })
             .catch((error) => {
                 console.error("Google login error:", error);
@@ -51,40 +61,40 @@ if (googleLogin) {
 // GitHub Login
 const githubProvider = new GithubAuthProvider();
 const githubLogin = document.getElementById("github-login-btn");
+
 if (githubLogin) {
     githubLogin.addEventListener("click", function () {
         signInWithPopup(auth, githubProvider)
             .then((result) => {
                 const user = result.user;
+
                 const userData = {
                     "github-login": true,
                     "email": user.email,
                     "name": user.displayName
                 };
-                sendUserDataToBackend(userData)
-                    .then(response => {
-                        console.log("GitHub login: Server response status:", response.status);
-                        window.location.href = "../home.php";
-                    })
-                    .catch(error => {
-                        console.error("GitHub login: Error sending to backend:", error);
-                        window.location.href = "../home.php";
-                    });
+
+                fetch("user-actions.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(userData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("GitHub login: Server Response:", data);
+                    window.location.href = "../home.php";
+                })
+                .catch(error => {
+                    console.error("GitHub login: Error sending to backend:", error);
+                    window.location.href = "../home.php";
+                });
+
             })
             .catch((error) => {
                 console.error("GitHub login error:", error);
                 window.location.href = "../home.php";
             });
-    });
-}
-
-// Helper Function
-function sendUserDataToBackend(userData) {
-    return fetch("user-actions.php", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(userData)
     });
 }
