@@ -31,9 +31,9 @@ class GoogleLogin implements LoginStrategy
         session_start();
         $_SESSION['email'] = $email;
         $_SESSION['user_id'] = $user['id']; // Set the user_id session
-        
-header("Location: ../home.php");
-exit();
+
+        //header("Location: ../home.php");
+        exit();
     }
 }
 ?>
