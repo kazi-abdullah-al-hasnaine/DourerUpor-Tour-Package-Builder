@@ -1,7 +1,7 @@
 <?php
 // admin_packages.php
 session_start();
-// $_SESSION['admin'] = 'admin';
+$_SESSION['admin'] = 'admin';
 if(isset($_SESSION['email']) || isset($_SESSION['user_id'])) {
     unset($_SESSION['email']);
     unset($_SESSION['user_id']);

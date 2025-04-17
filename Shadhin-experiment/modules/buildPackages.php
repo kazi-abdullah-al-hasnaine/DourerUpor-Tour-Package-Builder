@@ -6,7 +6,7 @@
 			<p>Share your experiances with the amazing community of tourists and explorers!</p>
 		</div>
 		<div>
-			<button class="theme-btn">Build & Publish
+			<button class="theme-btn" onclick="window.location.href='buildAndShare.php'"">Build & Publish
 			</button>
 		</div>
 	</section>	

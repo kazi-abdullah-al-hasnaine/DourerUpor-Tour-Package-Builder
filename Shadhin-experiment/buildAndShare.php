@@ -11,12 +11,17 @@ $conn = $db->getConnection();
 $conn = Database::getInstance()->getConnection();
 
 // Getting username from DB for navigation bar
-if(isset($_SESSION['email'])){
+if(isset($_SESSION['email']) || isset($_SESSION['admin'])){
     $email = $_SESSION['email'];
     $stmt = $conn->prepare("SELECT name FROM user WHERE email = :email");
     $stmt->execute(['email' => $email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     $username = explode(" ", $user['name'])[0];   
+}else{
+    echo "<script>
+    alert('You must login to use this feature!!');
+    window.history.back();
+    </script>";
 }
 
 include "decoration.php";

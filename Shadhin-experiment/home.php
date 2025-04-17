@@ -2,6 +2,10 @@
 session_start();
 $_SESSION['current-page'] = 'home';
 
+if(isset($_SESSION['admin'])){
+    unset($_SESSION['admin']);
+}
+
 // Database connection
 require_once 'db_connection/db.php';
 

@@ -29,7 +29,6 @@ class BasePage implements PageComponent
     }
 }
 
-// Step 3: Decorators for Common Sections
 // class HeaderDecorator implements PageComponent {
 //     private $page;
 

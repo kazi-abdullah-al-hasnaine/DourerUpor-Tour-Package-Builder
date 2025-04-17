@@ -2,62 +2,59 @@
 if ($type == "section") {
     $sectionType = "small-section";
     $cardType = "small-card";
-} else if ($type == "main-content") {
+} elseif ($type == "main-content") {
     $cardType = "large-card";
     $sectionType = "large-section";
 }
+
+// require_once('db_connection\db.php');
+
+$db = Database::getInstance();
+$conn = $db->getConnection();
+
+
+
+// SQL query
+$query = "SELECT d.name, d.country, d.type, AVG(r.rating) AS avg_rating, p.image
+          FROM destinations d
+          LEFT JOIN package_details pd ON pd.destination_id = d.destination_id
+          LEFT JOIN packages p ON p.package_id = pd.package_id
+          LEFT JOIN reviews r ON r.package_id = p.package_id
+          GROUP BY d.name
+          HAVING d.type = 'City'
+          ORDER BY avg_rating DESC
+          LIMIT $limit
+          ";
+
+$stmt = $conn->prepare($query);
+$stmt->execute();
+$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <section id="explore-section" class="<?php echo $sectionType; ?>">
-    <div class="title-container">
-        <h1>Cities to explore</h1>
-    </div>
     <div class="explore-package-card-container">
-        <div class="<?php echo $cardType; ?> exlpore-card lazy-bg" <?php echo getLazyBackgroundImage("img/rajshahi.jpg"); ?> style="background-repeat: no-repeat;
-                                      background-size: cover; border-radius: 10px;">
-            <div class="explore-wrapper">
-                <h3>Rajshahi</h3>
-                <p>4.8⭐ • Bangladesh</p>
-                <div>
-                    <button class="theme-btn explore-city-btn">Explore city</button>
+    <?php if (!empty($results)): ?>
+        <?php foreach ($results as $row): ?>
+            <?php
+                $cityName = $row['name'];
+                $country = $row['country'];
+                $rating = number_format($row['avg_rating'], 1);
+                $image = $row['image'] ?? 'img/default.jpg';
+            ?>
+            <div class="<?php echo $cardType; ?> exlpore-card lazy-bg" 
+                 <?php echo getLazyBackgroundImage("img/package-cover/{$image}"); ?> 
+                 style="background-repeat: no-repeat; background-size: cover; border-radius: 10px;">
+                <div class="explore-wrapper">
+                    <h3><?php echo $cityName; ?></h3>
+                    <p><?php echo $rating; ?>⭐ • <?php echo $country; ?></p>
+                    <div>
+                        <button class="theme-btn explore-city-btn">Explore city</button>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="<?php echo $cardType; ?> exlpore-card lazy-bg" <?php echo getLazyBackgroundImage("img/jaflong.jpg"); ?> style="background-repeat: no-repeat;
-                                      background-size: cover; border-radius: 10px;">
-            <div class="explore-wrapper">
-                <h3>Sylhet</h3>
-                <p>4.5⭐ • Bangladesh</p>
-                <div>
-                    <button class="theme-btn explore-city-btn">Explore city</button>
-                </div>
-            </div>
-        </div>
-        <div class="<?php echo $cardType; ?> exlpore-card lazy-bg" <?php echo getLazyBackgroundImage("img/cox.jpg"); ?> style="background-repeat: no-repeat;
-                                      background-size: cover; border-radius: 10px;">
-            <div class="explore-wrapper">
-                <h3>Cox's Bazar</h3>
-                <p>3.9⭐ • Bangladesh</p>
-                <div>
-                    <button class="theme-btn explore-city-btn">Explore city</button>
-                </div>
-            </div>
-        </div>
-        <div class="<?php echo $cardType; ?> exlpore-card lazy-bg" <?php echo getLazyBackgroundImage("img/ctg.jpg"); ?> style="background-repeat: no-repeat;
-                                      background-size: cover; border-radius: 10px;">
-            <div class="explore-wrapper">
-                <h3>Chittagong</h3>
-                <p>4.2⭐ • Bangladesh</p>
-                <div>
-                    <button class="theme-btn explore-city-btn">Explore city</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="btn-section">
-        <button class="theme-btn view-more">view more</button>
-
-    </div>
-
-
+        <?php endforeach; ?>
+    <?php else: ?>
+        <p>No cities found.</p>
+    <?php endif; ?>
+</div>
 </section>
