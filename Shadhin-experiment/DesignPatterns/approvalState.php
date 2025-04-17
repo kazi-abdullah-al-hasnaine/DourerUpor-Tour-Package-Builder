@@ -97,8 +97,11 @@ class Package {
     }
     
     // Add the getPackageInfo method
-    private function getPackageInfo($packageId) {
-        $stmt = $this->conn->prepare("SELECT * FROM packages WHERE package_id = ?");
+    public function getPackageInfo($packageId) {
+        $stmt = $this->conn->prepare("SELECT p.*, u.name as creator_name 
+                                     FROM packages p 
+                                     JOIN user u ON p.build_by = u.id 
+                                     WHERE p.package_id = ?");
         $stmt->execute([$packageId]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
