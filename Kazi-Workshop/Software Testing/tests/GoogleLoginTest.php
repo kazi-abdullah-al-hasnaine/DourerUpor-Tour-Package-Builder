@@ -17,9 +17,6 @@ try {
     echo "Login successful. User session started." . PHP_EOL;
     echo "Session Email: " . $_SESSION['email'] . PHP_EOL;
     echo "Session User ID: " . $_SESSION['user_id'] . PHP_EOL;
-
-  
-
 } catch (Exception $e) {
     echo "Error during login: " . $e->getMessage() . PHP_EOL;
 }
