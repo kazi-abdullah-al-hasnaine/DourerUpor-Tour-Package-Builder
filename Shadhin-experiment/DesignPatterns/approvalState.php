@@ -40,8 +40,8 @@ class ApprovedState implements PackageState {
     }
     
     public function reject($package) {
-        $package->setState(new RejectedState());
-        return true;
+        // $package->setState(new RejectedState());
+        return false;
     }
     
     public function getPendingCount() {
