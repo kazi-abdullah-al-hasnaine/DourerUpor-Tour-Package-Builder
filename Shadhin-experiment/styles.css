@@ -666,9 +666,10 @@ input:focus {
 .package-details {
   display: flex;
   flex-direction: row;
-  justify-content: center;
-  align-items: flex-start;
+  justify-content: space-around;
+  align-items: center;
   height: fit-content;
+  margin-top: 20px;
 }
 
 .package-details .left{
@@ -676,12 +677,12 @@ input:focus {
 }
 .package-details .left .package-cover {
   width: 300px;
-  height: fit-content;
+  height: 500px;
   margin: 50px 0 25px 0;
 }
 
 .package-details .right {
-  width: 850px;
+  width: 700px;
   padding: 20px;
   display: flex;
   flex-direction: column;
