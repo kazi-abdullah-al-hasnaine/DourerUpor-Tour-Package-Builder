@@ -1,0 +1,607 @@
+/* Combined Admin Dashboard Styling for DourerUpor */
+:root {
+  --blue: #3581b8;
+  --green: #168C4D;
+  --white: #f4fff8;
+  --black: #171d1c;
+  --primary: #7272CE;
+  --secondary: #ADC9B8;
+  --red: #e74c3c;
+  --gray: #f0f0f0;
+  --light-gray: #f9f9f9;
+  --border-color: #e0e0e0;
+  --shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: sans-serif;
+}
+
+body {
+  background-color: var(--white);
+  color: var(--black);
+}
+
+.admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1, h2 {
+  color: var(--black);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+h1 i, h2 i {
+  margin-right: 10px;
+  color: var(--blue);
+}
+
+/* Admin Navigation and Filter Styles */
+.admin-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-tab {
+  padding: 10px 15px;
+  border-radius: 40px;
+  text-decoration: none;
+  color: var(--black);
+  background-color: var(--gray);
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+.nav-tab i {
+  margin-right: 5px;
+}
+
+.nav-tab.active {
+  background-color: var(--primary);
+  color: var(--white);
+}
+
+.nav-tab:hover:not(.active) {
+  background-color: var(--secondary);
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.search-box {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 40px;
+  font-size: 14px;
+}
+
+.dropdown {
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 40px;
+  font-size: 14px;
+}
+
+/* Admin Stats Cards */
+.admin-stats {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: linear-gradient(273deg, rgba(98,166,241,1) 0%, rgba(65,205,185,1) 100%);
+  border-radius: 10px;
+  padding: 20px;
+  flex: 1;
+  box-shadow: var(--shadow);
+  text-align: center;
+  color: var(--white);
+  transition: transform 0.3s ease;
+}
+
+/*.stat-card:hover {
+  transform: translateY(-5px);
+}*/
+
+.stat-card i {
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+}
+
+.stat-card h3 {
+  font-size: 2rem;
+  margin: 10px 0;
+}
+
+.stat-card p {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+/* Packages Container */
+.packages-container {
+  background-color: var(--secondary);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.package-card {
+  background-color: var(--white);
+  border-radius: 10px;
+  margin-bottom: 20px;
+  overflow: visible;
+  transition: transform 0.3s ease;
+}
+
+/*.package-card:hover {
+  transform: translateY(-5px);
+}*/
+
+.package-header {
+  background-color: var(--blue);
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.package-header h3 {
+  margin: 0;
+  color: var(--white);
+  font-size: 1.6rem;
+}
+
+.package-date {
+  color: var(--white);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-pending {
+  background-color: #FFC107;
+  color: var(--black);
+}
+
+.status-approved {
+  background-color: var(--green);
+  color: var(--white);
+}
+
+.status-rejected {
+  background-color: var(--red);
+  color: var(--white);
+}
+
+.package-content {
+  padding: 15px;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 20px;
+}
+
+.package-image img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.package-info p {
+  margin-bottom: 10px;
+}
+
+.package-description {
+  color: var(--black);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+/* Action Buttons and Dropdowns */
+.package-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.btn-view, .btn-approve, .btn-reject, .btn-cancel {
+  padding: 8px 16px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.btn-view {
+  background-color: var(--primary);
+  color: var(--white);
+  border: 1px solid var(--primary);
+}
+
+.btn-view:hover {
+  background-color: transparent;
+  color: var(--primary);
+}
+
+.btn-approve {
+  background-color: var(--green);
+  color: var(--white);
+  border: 1px solid var(--green);
+}
+
+.btn-approve:hover {
+  background-color: transparent;
+  color: var(--green);
+}
+
+.btn-reject {
+  background-color: var(--red);
+  color: var(--white);
+  border: 1px solid var(--red);
+}
+
+.btn-reject:hover {
+  background-color: transparent;
+  color: var(--red);
+}
+
+.btn-cancel {
+  background-color: var(--gray);
+  color: var(--black);
+  border: 1px solid var(--gray);
+}
+
+.btn-cancel:hover {
+  background-color: transparent;
+  color: var(--black);
+  border-color: var(--black);
+}
+
+.btn-view i, .btn-approve i, .btn-reject i, .btn-cancel i {
+  margin-right: 5px;
+}
+
+.inline-form {
+  display: inline;
+}
+
+/* Dropdown Menu Styling */
+.action-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: var(--white);
+  min-width: 200px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  z-index: 100;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.action-dropdown:hover .dropdown-content {
+  display: block;
+  animation: dropdownFadeIn 0.3s;
+}
+
+@keyframes dropdownFadeIn {
+  from {opacity: 0; transform: translateY(-10px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+.dropdown-content form {
+  margin: 0;
+}
+
+.btn-status-change {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 15px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.btn-status-change:hover {
+  background-color: var(--gray);
+}
+
+.btn-status-change i {
+  margin-right: 8px;
+  width: 16px;
+  text-align: center;
+}
+
+.btn-status-change.approve i {
+  color: var(--green);
+}
+
+.btn-status-change.reject i {
+  color: var(--red);
+}
+
+.btn-status-change.pending i {
+  color: #FFC107;
+}
+
+/* Empty State */
+.no-packages {
+  text-align: center;
+  padding: 60px 0;
+  color: var(--black);
+}
+
+.no-packages i {
+  font-size: 4rem;
+  color: var(--primary);
+  margin-bottom: 15px;
+}
+
+.no-packages p {
+  font-size: 1.4rem;
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: var(--white);
+  margin: 10% auto;
+  padding: 25px;
+  border-radius: 12px;
+  width: 50%;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  animation: modalFadeIn 0.3s;
+}
+
+@keyframes modalFadeIn {
+  from {opacity: 0; transform: translateY(-50px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+  color: var(--black);
+  text-decoration: none;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  resize: vertical;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.form-group textarea:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.rejection-feedback {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #fff8e1;
+  border-left: 4px solid #ffc107;
+  font-size: 0.9em;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Destination Form Styling */
+
+.dest-container {
+  background-color: var(--secondary);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-bottom: 20px;
+}
+
+.dest-card {
+  background-color: var(--white);
+  border-radius: 10px;
+  margin-bottom: 20px;
+  overflow: visible;
+  transition: transform 0.3s ease;
+}
+
+.dest-header {
+  background-color: var(--blue);
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dest-content {
+  padding: 15px;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 20px;
+}
+
+
+.destination-form-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.destination-form-container h2 {
+  margin-bottom: 20px;
+}
+
+.destination-form-container .package-card {
+  background-color: var(--white);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.destination-form-container .form-group {
+  margin-bottom: 15px;
+}
+
+.destination-form-container label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.destination-form-container .search-box,
+.destination-form-container .dropdown {
+  width: 100%;
+  max-width: none;
+}
+
+.destination-form-container button {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.alert {
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  animation: fadeIn 0.5s;
+}
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border-left: 4px solid #28a745;
+}
+.alert-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-left: 4px solid #dc3545;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+
+/* Responsive Design */
+@media only screen and (max-width: 768px) {
+  .admin-stats {
+    flex-direction: column;
+  }
+  
+  .package-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .package-actions {
+    flex-direction: column;
+  }
+  
+  .btn-view, .btn-approve, .btn-reject {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 5px;
+  }
+
+  .modal-content {
+    width: 90%;
+    padding: 15px;
+  }
+
+  .admin-nav {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+
+  .search-box, .dropdown {
+    width: 100%;
+  }
+}
