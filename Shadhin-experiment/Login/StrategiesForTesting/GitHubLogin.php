@@ -2,7 +2,7 @@
 require_once 'LoginStrategy.php';
 require_once '../db_connection/db.php';
 
-class GoogleLogin implements LoginStrategy
+class GitHubLogin implements LoginStrategy
 {
     public function login($data)
     {
@@ -28,12 +28,11 @@ class GoogleLogin implements LoginStrategy
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // Start a session and store user info
-        session_start();
+        //session_start();
         $_SESSION['email'] = $email;
         $_SESSION['user_id'] = $user['id']; // Set the user_id session
 
         //header("Location: ../home.php");
-        exit();
+        //exit();
     }
 }
-?>
