@@ -1,51 +1,40 @@
 <?php
-// Ensure session is started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Use your database connection
 require_once('.\db_connection\db.php');
 $db = Database::getInstance();
 $conn = $db->getConnection();
 
 $email = $_SESSION['email'] ?? null;
+$isAdmin = isset($_SESSION['admin']) && $_SESSION['admin'] === 'admin';
 
-// Get the logged-in user's ID
 $stmt = $conn->prepare("SELECT id FROM user WHERE email = :email");
 $stmt->bindParam(':email', $email);
 $stmt->execute();
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-include('.\DesignPatterns\reviewIterator.php');
 
-// Fetch reviews using a function
-function getReviewsForPackage($conn, $packageId): ReviewCollection
-{
+function getReviewsForPackage($conn, $packageId) {
     $stmt = $conn->prepare("
-        SELECT  r.review_id AS reviewId, r.user_id AS userID, u.name AS userName, r.rating, r.review
+        SELECT r.review_id AS reviewId, r.user_id AS userID, u.name AS userName, r.rating, r.review
         FROM reviews r
         JOIN user u ON r.user_id = u.id
         WHERE r.package_id = ? ORDER BY r.review_publish_time DESC;
     ");
     $stmt->execute([$packageId]);
 
-    $reviews = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $reviews[] = new Reviews($row['reviewId'], $row['userID'], $row['userName'], $row['rating'], $row['review']);
-    }
-
-    return new ReviewCollection($reviews);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Check if package ID is set
 if (!isset($packageIdForReview)) {
     echo "<p>Package ID is missing.</p>";
     exit;
 }
 
 $packageId = $packageIdForReview;
-$reviewCollection = getReviewsForPackage($conn, $packageId);
+$reviews = getReviewsForPackage($conn, $packageId);
 ?>
 
 <!DOCTYPE html>
@@ -64,7 +53,8 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
 
 <body>
     <section id="review" class="review">
-        <!-- WRITE REVIEW -->
+        <!-- WRITE REVIEW FORM-->
+        <?php if (!$isAdmin): // Hide review form from admin users ?>
         <section id="write-review">
             <div class="write-review-container">
                 <h2>Drop a review</h2>
@@ -101,6 +91,8 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
                 ?>
             </div>
         </section>
+        <?php endif; ?>
+        
         <!-- DISPLAYING ALL REVIEWS -->
         <section id="all-reviews">
             <div class="reviews-list">
@@ -108,17 +100,15 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
 
                 <div class="reviews-container">
                     <?php
-                    $reviewIterator = $reviewCollection->createIterator();
-                    if ($reviewIterator->hasNext()):
-                        while ($reviewIterator->hasNext()):
-                            $reviews = $reviewIterator->next();
+                    if (!empty($reviews)):
+                        foreach ($reviews as $review):
                             echo "
                         <div class='review-item'>
-                            <h4>{$reviews->userName}</h4>
+                            <h4>{$review['userName']}</h4>
                             <p>Rating: 
                             <span class='stars'>";
                             for ($i = 1; $i <= 5; $i++) {
-                                if ($i <= $reviews->rating) {
+                                if ($i <= $review['rating']) {
                                     echo "<span class='filled'>&#9733;</span>";
                                 } else {
                                     echo "&#9733;";
@@ -127,16 +117,16 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
                             echo "</span>
                             </p>";
                             echo "
-                            <p>{$reviews->review}</p>";
+                            <p>{$review['review']}</p>";
 
-                            if ($user && ($reviews->userID == $user['id'])):
+                            if ($user && ($review['userID'] == $user['id'])):
                                 echo "
                                 <div class='review-actions'>
-                                    <button class='review-edit-btn' onclick='showEditForm({$reviews->reviewId}, {$reviews->rating}, `{$reviews->review}`)'>
+                                    <button class='review-edit-btn' onclick='showEditForm({$review['reviewId']}, {$review['rating']}, `{$review['review']}`)'>
                                         <i class='bi bi-pencil-square'></i> Edit
                                     </button>
                                     <form action='modules/backend/review-action.php' method='POST' style='display:inline;' onsubmit='return confirm(\"Are you sure you want to delete this review?\");'>
-                                        <input type='hidden' name='review_id' value='{$reviews->reviewId}'>
+                                        <input type='hidden' name='review_id' value='{$review['reviewId']}'>
                                         <input type='hidden' name='package_id' value='{$packageId}'>
                                         <button type='submit' name='delete-review-btn' class='review-delete-btn'>
                                             <i class='bi bi-trash3-fill'></i> Delete
@@ -144,11 +134,11 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
                                     </form>
                                 </div>
                                 
-                                <div class='edit-form' id='edit-form-{$reviews->reviewId}'>
+                                <div class='edit-form' id='edit-form-{$review['reviewId']}'>
                                     <form action='modules/backend/review-action.php' method='POST'>
                                         <div class='form-group'>
                                             <label>Rating:</label>
-                                            <select class='form-control' name='rating' id='edit-rating-{$reviews->reviewId}' required>
+                                            <select class='form-control' name='rating' id='edit-rating-{$review['reviewId']}' required>
                                                 <option value='1'>1 ★</option>
                                                 <option value='2'>2 ★★</option>
                                                 <option value='3'>3 ★★★</option>
@@ -158,18 +148,18 @@ $reviewCollection = getReviewsForPackage($conn, $packageId);
                                         </div>
                                         <div class='form-group'>
                                             <br><label>Edit Your Review</label><br>
-                                            <textarea class='form-control' name='review' id='edit-review-{$reviews->reviewId}' required></textarea>
+                                            <textarea class='form-control' name='review' id='edit-review-{$review['reviewId']}' required></textarea>
                                         </div>
-                                        <input type='hidden' name='review_id' value='{$reviews->reviewId}'>
+                                        <input type='hidden' name='review_id' value='{$review['reviewId']}'>
                                         <input type='hidden' name='package_id' value='{$packageId}'>
                                         <button type='submit' name='update-review-btn' class='save-btn'>Save Changes</button>
-                                        <button type='button' class='cancel-btn' onclick='hideEditForm({$reviews->reviewId})'>Cancel</button>
+                                        <button type='button' class='cancel-btn' onclick='hideEditForm({$review['reviewId']})'>Cancel</button>
                                     </form>
                                 </div>";
                             endif;
 
                             echo "</div>";
-                        endwhile;
+                        endforeach;
                     else:
                         echo "
                     <div class='review-item'>

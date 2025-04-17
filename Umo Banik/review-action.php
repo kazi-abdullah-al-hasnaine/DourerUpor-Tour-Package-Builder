@@ -9,7 +9,6 @@ $package_id = isset($_POST['package_id']) ? intval($_POST['package_id']) : 0;
 // Create the redirect URL with package ID
 $redirect_url = "package.php?id=" . $package_id;
 
-// Check if the user is logged in
 if (!isset($_SESSION['email'])) {
     echo '<script>
         alert("You must be logged in to perform this action");
@@ -18,7 +17,6 @@ if (!isset($_SESSION['email'])) {
     exit; 
 }
 
-// Get the logged-in user's ID
 $email = $_SESSION['email'];
 $stmt = $conn->prepare("SELECT id FROM user WHERE email = :email");
 $stmt->bindParam(':email', $email);
@@ -35,12 +33,10 @@ if (!$user) {
 
 $userId = $user['id'];
 
-// Handle SUBMIT new review
 if (isset($_POST['submit-review-btn'])) {
     $user_rating = $_POST['rating'];
     $user_review = $_POST['review'];
     
-    // Validate inputs
     if (empty($user_review)) {
         echo '<script>
             alert("Please fill out this field!");
@@ -49,7 +45,6 @@ if (isset($_POST['submit-review-btn'])) {
         exit;
     }
     
-    // Check if user already submitted a review for this package
     $stmt = $conn->prepare("SELECT review_id FROM reviews WHERE user_id = :user_id AND package_id = :package_id");
     $stmt->bindParam(':user_id', $userId);
     $stmt->bindParam(':package_id', $package_id);
@@ -62,7 +57,7 @@ if (isset($_POST['submit-review-btn'])) {
         </script>';
         exit;
     } else {
-        // Insert the review using PDO
+        
         $stmt = $conn->prepare("INSERT INTO reviews (package_id, rating, review, user_id, review_publish_time)
                               VALUES (:package_id, :rating, :review, :user_id, NOW())");
         $stmt->bindParam(':package_id', $package_id);
@@ -85,13 +80,12 @@ if (isset($_POST['submit-review-btn'])) {
         }
     }
 }
-// Handle UPDATE review
+
 elseif (isset($_POST['update-review-btn'])) {
     $review_id = $_POST['review_id'];
     $user_rating = $_POST['rating'];
     $user_review = $_POST['review'];
-    
-    // Validate inputs
+   
     if (empty($user_review)) {
         echo '<script>
             alert("Please fill out the review field!");
@@ -100,7 +94,7 @@ elseif (isset($_POST['update-review-btn'])) {
         exit;
     }
     
-    // Verify the review belongs to this user
+    // Check if the review belongs to the logged in user 
     $stmt = $conn->prepare("SELECT review_id FROM reviews WHERE review_id = :review_id AND user_id = :user_id");
     $stmt->bindParam(':review_id', $review_id);
     $stmt->bindParam(':user_id', $userId);
@@ -114,7 +108,6 @@ elseif (isset($_POST['update-review-btn'])) {
         exit;
     }
     
-    // Update the review
     $stmt = $conn->prepare("UPDATE reviews SET rating = :rating, review = :review WHERE review_id = :review_id");
     $stmt->bindParam(':rating', $user_rating);
     $stmt->bindParam(':review', $user_review);
@@ -134,11 +127,10 @@ elseif (isset($_POST['update-review-btn'])) {
         exit;
     }
 }
-// Handle DELETE review
+
 elseif (isset($_POST['delete-review-btn'])) {
     $review_id = $_POST['review_id'];
     
-    // Verify the review belongs to this user
     $stmt = $conn->prepare("SELECT review_id FROM reviews WHERE review_id = :review_id AND user_id = :user_id");
     $stmt->bindParam(':review_id', $review_id);
     $stmt->bindParam(':user_id', $userId);
@@ -152,7 +144,7 @@ elseif (isset($_POST['delete-review-btn'])) {
         exit;
     }
     
-    // Delete the review
+    
     $stmt = $conn->prepare("DELETE FROM reviews WHERE review_id = :review_id");
     $stmt->bindParam(':review_id', $review_id);
     

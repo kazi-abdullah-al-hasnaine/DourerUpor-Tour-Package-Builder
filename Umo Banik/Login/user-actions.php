@@ -7,11 +7,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     session_start();
     $context = new LoginContext();
 
-    if (isset($_POST["login-button"])) {
-        // Normal login
-        $context->setStrategy(new NormalLogin());
-        $context->executeLogin($_POST);
-    }
+   
 
     if (isset($_POST["registration-button"])) {
         // Handle registration
@@ -43,10 +39,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         session_destroy();
         header("Location: login.html");
     }
+
+
+    if (isset($_POST["login-button"])) {
+        // Normal login
+        $context->setStrategy(new NormalLogin());
+        $context->executeLogin($_POST);
+    }
+    
     // Handle Google login (data sent via JSON)
     $data = json_decode(file_get_contents("php://input"), true);
     if (isset($data["google-login"])) {
         $context->setStrategy(new GoogleLogin());
+        $context->executeLogin($data);
+    }
+    
+    // Handle GitHub login (data sent via JSON)
+    if (isset($data["github-login"])) {
+        $context->setStrategy(new GitHubLogin());
         $context->executeLogin($data);
     }
     
