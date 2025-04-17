@@ -210,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
     
-    <link rel="stylesheet" type="text/css" href="modules/moduleCSS/buildPackages.css">
+    <link rel="stylesheet" type="text/css" href="modules/moduleCSS/buildPackages.css?v=<?php echo time(); ?>">
     <script>
         let destinationList = <?php echo json_encode($destinations); ?>;
         let isEditMode = <?php echo $isEditMode ? 'true' : 'false'; ?>;

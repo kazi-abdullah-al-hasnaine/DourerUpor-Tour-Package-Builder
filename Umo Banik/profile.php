@@ -164,7 +164,7 @@ if (isset($_POST['mark_read']) && $_POST['mark_read'] == 1) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" type="text/css" href="profile.css">
+    <link rel="stylesheet" type="text/css" href="profile.css?v=<?php echo time(); ?>">
     <style>
         /* Additional styles for notifications */
         .notification-item {
@@ -262,7 +262,7 @@ if (isset($_POST['mark_read']) && $_POST['mark_read'] == 1) {
                        <!-- Inside the Created Packages Section -->
                         <div class="package-item">
                             <div class="package-info">
-                                <a href="package-details.php?id=<?php echo $package['package_id']; ?>" class="package-name">
+                                <a href="package.php?id=<?php echo $package['package_id']; ?>" class="package-name">
                                     <?php echo htmlspecialchars($package['package_name']); ?>
                                 </a>
                                 <div class="package-date">Created on: <?php echo formatDate($package['publish_time']); ?></div>
@@ -297,14 +297,14 @@ if (isset($_POST['mark_read']) && $_POST['mark_read'] == 1) {
                     <?php foreach ($followedPackages as $package): ?>
                         <div class="package-item">
                             <div class="package-info">
-                                <a href="package-details.php?id=<?php echo $package['package_id']; ?>" class="package-name">
+                                <a href="package.php?id=<?php echo $package['package_id']; ?>" class="package-name">
                                     <?php echo htmlspecialchars($package['package_name']); ?>
                                 </a>
                                 <div class="package-date">Followed on: <?php echo formatDate($package['time']); ?></div>
                             </div>
-                            <div>
+                            <!-- <div>
                                 <a href="unfollow-package.php?id=<?php echo $package['package_id']; ?>&user_id=<?php echo $userId; ?>" class="btn btn-small">Unfollow</a>
-                            </div>
+                            </div> -->
                         </div>
                     <?php endforeach; ?>
                 <?php else: ?>

@@ -93,14 +93,18 @@ $package_status = $statusQuery->fetchColumn();
                         <li class="active-page"><a href="home.php" <?php if($active_page == "home") {echo "class='active'";} ?> >Home</a></li>
                         <li><a <?php if($active_page == "popular") {echo "class='active'";} ?> href="popular.php">Popular</a></li>
                         <li><a <?php if($active_page == "explore") {echo "class='active'";} ?> href="">Explore</a></li>
-                        <li><a <?php if($active_page == "build&share") {echo "class='active'";} ?> href="">Build & Share</a></li>
-                        <li><a href="">Wishlist</a></li>
+                        <?php if (isset($_SESSION['email'])): ?>
+                        <li><a <?php if ($active_page == "buildAndShare") {
+                                    echo "class='active'";
+                                } ?> href="buildAndShare.php">Build & Share</a></li>       
+                        <li><a href="Profile.php"><?php echo $username; ?></a></li>
+                        <?php endif ?>
                     </ul>
                 </div>
                 <div>
                     <?php if (isset($_SESSION['email'])): ?>
                         <form action="./Login/user-actions.php" method="post">
-                            <button type ="Submit" class="theme-btn log-out-btn" title="Click to logout" name="log-out-btn"><?php echo $username; ?></button>
+                            <button type ="Submit" class="theme-btn log-out-btn" title="Click to logout" name="log-out-btn">Log out</button>
                         </form>
                     
                     <?php else: ?>
@@ -115,9 +119,6 @@ $package_status = $statusQuery->fetchColumn();
                     <?php endif ?>
                 </div>
  </nav>
- <?php 
-    include "modules/wishlist.php";
- ?>
  <section id="package-details">
         <div class="package-details-container">
         <?php foreach ($rows as $row): 
@@ -145,8 +146,7 @@ $package_status = $statusQuery->fetchColumn();
                         <button disabled class="theme-btn info-btn"><?php echo htmlspecialchars($totalReview); ?>💬</button>
                         <button disabled class="theme-btn info-btn offer">Save ৳<?php echo $saved; ?></button>
                     </div>
-                    <p class="card-item package-brief"><?php echo htmlspecialchars($details); ?></p>
-                    <?php if ($package_status !== 'pending' && $package_status !== 'rejected'): ?>
+                    <p class="card-item package-brief"><?php echo nl2br($details); ?></p>
                     <div class="card-item">
                         <?php if (isset($_SESSION['email'])): ?>
                             <?php if ($loggedInUserId == null): ?>
@@ -156,7 +156,6 @@ $package_status = $statusQuery->fetchColumn();
                                 <?php endif; ?>
                         <?php endif; ?>
                     </div>
-                    <?php endif; ?>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -291,13 +290,18 @@ $package_status = $statusQuery->fetchColumn();
     </script>
 
 <!-- Review Section  -->
-<?php if ($package_status == 'Accepted'): ?>
+<?php if ($package_status == 'Approved' || $package_status == 'approved'): ?>
 <section id="reviews-section">
     <?php $packageIdForReview = $packageId; 
-        include('review.php');
+        include('modules/review.php');
     ?>
 </section>
 <?php endif; ?>
+
+<?php 
+    // include "modules/wishlist.php";
+    include "modules/footer.php";
+ ?>
 
 </body>
 </html>

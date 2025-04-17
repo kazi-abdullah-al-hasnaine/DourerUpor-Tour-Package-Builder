@@ -2,6 +2,11 @@
 
 // admin_packages.php
 session_start();
+// $_SESSION['admin'] = 'admin';
+if(isset($_SESSION['email']) || isset($_SESSION['user_id'])) {
+    unset($_SESSION['email']);
+    unset($_SESSION['user_id']);
+}// For testing purposes, set a user ID
 require_once('db_connection\db.php');
 include_once('DesignPatterns\approvalState.php');
 
@@ -47,16 +52,19 @@ $pendingCount = $pendingState->getPendingCount();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Package Approval</title>
+    <!-- Bootstrap Link -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" type="text/css" href="admin.css">
+    <link rel="stylesheet" type="text/css" href="admin.css?v=<?php echo time(); ?>">
 </head>
 <body>
     <div class="admin-container">
-        <h1><i class="fas fa-user-shield"></i> Admin Dashboard</h1>
+        <h1><i class="bi bi-person-workspace"></i> Admin Dashboard</h1>
         
         <div class="admin-stats">
             <div class="stat-card">
-                <i class="fas fa-clock"></i>
+                <i class="bi bi-clock-history"></i>
                 <h3><?php echo $pendingCount; ?></h3>
                 <p>Pending Packages</p>
             </div>
@@ -64,7 +72,7 @@ $pendingCount = $pendingState->getPendingCount();
         </div>
         
         <div class="packages-container">
-            <h2><i class="fas fa-suitcase"></i> Pending Packages</h2>
+            <h2><i class="bi bi-hourglass-split"></i> Pending Packages</h2>
             
             <?php if (count($pendingPackages) > 0): ?>
                 <?php foreach ($pendingPackages as $package): ?>
@@ -107,7 +115,7 @@ $pendingCount = $pendingState->getPendingCount();
             <?php else: ?>
                 <div class="no-packages">
                     <i class="fas fa-check-circle"></i>
-                    <p>No pending packages to review!</p>
+                    <p>No pending packages!</p>
                 </div>
             <?php endif; ?>
         </div>
