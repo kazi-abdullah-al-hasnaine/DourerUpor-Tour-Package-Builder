@@ -4,7 +4,7 @@ require_once 'c:\xampp\htdocs\DourerUpor-Tour-Package-Builder\Kazi-Workshop\Logi
 
 // Simulate GitHub data returned after OAuth
 $fakeGitHubData = [
-    "email" => "testuser@example.com",
+    "email" => "githubuser@example.com",
     "name" => "Github User"
 ];
 

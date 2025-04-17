@@ -1,1 +1,1 @@
-{"version":1,"defects":{"DatabaseTest::testConnectionIsPDO":4},"times":{"DatabaseTest::testSingletonInstance":1.227,"DatabaseTest::testConnectionIsPDO":0}}
+{"version":1,"defects":{"DatabaseTest::testConnectionIsPDO":4},"times":{"DatabaseTest::testSingletonInstance":0.004,"DatabaseTest::testConnectionIsPDO":0}}
