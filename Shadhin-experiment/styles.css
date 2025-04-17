@@ -658,29 +658,36 @@ input:focus {
 #package-details {
   max-width: 1200px;
   margin: 0 auto;
+  /* height: 100%; */
+  /* height: fit-content; */
+  /* overflow: hidden; */
 }
 
 .package-details {
   display: flex;
   flex-direction: row;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  height: fit-content;
 }
 
+.package-details .left{
+  height: fit-content;
+}
 .package-details .left .package-cover {
   width: 300px;
-  height: 400px;
+  height: fit-content;
   margin: 50px 0 25px 0;
 }
 
 .package-details .right {
-  width: 900px;
+  width: 850px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  align-items: start;
-  height: 400px;
+  align-items: flex-start;
+  height: fit-content;
 }
 
 .package-details-container .package-name {

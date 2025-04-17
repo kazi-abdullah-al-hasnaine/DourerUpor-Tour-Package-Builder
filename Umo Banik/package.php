@@ -291,7 +291,7 @@ $package_status = $statusQuery->fetchColumn();
     </script>
 
 <!-- Review Section  -->
-<?php if ($package_status !== 'pending' && $package_status !== 'rejected'): ?>
+<?php if ($package_status == 'Accepted'): ?>
 <section id="reviews-section">
     <?php $packageIdForReview = $packageId; 
         include('review.php');

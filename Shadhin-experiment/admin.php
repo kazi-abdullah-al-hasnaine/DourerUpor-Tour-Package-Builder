@@ -2,6 +2,11 @@
 
 // admin_packages.php
 session_start();
+// $_SESSION['admin'] = 'admin';
+if(isset($_SESSION['email']) || isset($_SESSION['user_id'])) {
+    unset($_SESSION['email']);
+    unset($_SESSION['user_id']);
+}// For testing purposes, set a user ID
 require_once('db_connection\db.php');
 include_once('DesignPatterns\approvalState.php');
 
@@ -16,7 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'approve') {
             $package->approve();
         } elseif ($action === 'reject') {
-            $package->reject();
+            $feedback = $_POST['rejection_feedback'] ?? 'Package does not meet our requirements.';
+            $package->reject($feedback); // Pass feedback to the reject method
+            header("Location: admin.php"); // Redirect to avoid resubmission
         }
     }
 }
@@ -46,7 +53,7 @@ $pendingCount = $pendingState->getPendingCount();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Package Approval</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" type="text/css" href="admin.css">
+    <link rel="stylesheet" type="text/css" href="admin.css?v=<?php echo time(); ?>">
 </head>
 <body>
     <div class="admin-container">
@@ -110,5 +117,57 @@ $pendingCount = $pendingState->getPendingCount();
             <?php endif; ?>
         </div>
     </div>
+    <div id="rejectionModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2><i class="fas fa-times-circle"></i> Reject Package</h2>
+        <form id="rejectionForm" method="POST">
+            <input type="hidden" id="rejection_package_id" name="package_id">
+            <input type="hidden" name="action" value="reject">
+            <div class="form-group">
+                <label for="rejection_feedback">Provide feedback to the package creator:</label>
+                <textarea id="rejection_feedback" name="rejection_feedback" rows="4" 
+                    placeholder="Please explain why this package is being rejected..." required></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" id="cancelRejection">Cancel</button>
+                <button type="submit" class="btn-reject">Confirm Rejection</button>
+            </div>
+        </form>
+    </div>
+    </div>
 </body>
 </html>
+
+<script>
+    // Modal handling code
+    const modal = document.getElementById("rejectionModal");
+    const closeBtn = document.getElementsByClassName("close")[0];
+    const cancelBtn = document.getElementById("cancelRejection");
+
+    // When the user clicks on the reject button in the package list, open the modal
+    document.querySelectorAll('.package-actions .btn-reject').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const packageId = this.closest('form').querySelector('input[name="package_id"]').value;
+            document.getElementById('rejection_package_id').value = packageId;
+            modal.style.display = "block";
+        });
+    });
+
+    // Close the modal when clicking on X or Cancel
+    closeBtn.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    cancelBtn.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    // Close if clicked outside the modal
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>

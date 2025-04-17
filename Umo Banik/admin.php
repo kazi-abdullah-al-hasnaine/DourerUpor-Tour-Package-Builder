@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($action === 'reject') {
             $feedback = $_POST['rejection_feedback'] ?? 'Package does not meet our requirements.';
             $package->reject($feedback); // Pass feedback to the reject method
+            header("Location: admin.php"); // Redirect to avoid resubmission
         }
     }
 }

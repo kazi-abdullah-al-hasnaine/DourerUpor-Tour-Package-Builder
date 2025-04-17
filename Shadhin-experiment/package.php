@@ -146,7 +146,7 @@ $package_status = $statusQuery->fetchColumn();
                         <button disabled class="theme-btn info-btn"><?php echo htmlspecialchars($totalReview); ?>💬</button>
                         <button disabled class="theme-btn info-btn offer">Save ৳<?php echo $saved; ?></button>
                     </div>
-                    <p class="card-item package-brief"><?php echo htmlspecialchars($details); ?></p>
+                    <p class="card-item package-brief"><?php echo nl2br($details); ?></p>
                     <div class="card-item">
                         <?php if (isset($_SESSION['email'])): ?>
                             <?php if ($loggedInUserId == null): ?>
@@ -290,10 +290,10 @@ $package_status = $statusQuery->fetchColumn();
     </script>
 
 <!-- Review Section  -->
-<?php if ($package_status !== 'pending' || $package_status !== 'rejected'): ?>
+<?php if ($package_status == 'Approved' || $package_status == 'approved'): ?>
 <section id="reviews-section">
     <?php $packageIdForReview = $packageId; 
-        include('modules\review.php');
+        include('modules/review.php');
     ?>
 </section>
 <?php endif; ?>
