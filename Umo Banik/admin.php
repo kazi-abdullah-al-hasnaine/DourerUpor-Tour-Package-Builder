@@ -123,16 +123,17 @@ $stmt->execute();
 $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
-$pendingState = new PendingState();
-$pendingCount = $pendingState->getPendingCount();
+$pendingPackage = new Package();
+$pendingPackage->setState(new PendingState());
+$pendingCount = $pendingPackage->getStateCount();
 
-$stmtApproved = $conn->prepare("SELECT COUNT(*) FROM packages WHERE status = 'approved'");
-$stmtApproved->execute();
-$approvedCount = $stmtApproved->fetchColumn();
+$approvedPackage = new Package();
+$approvedPackage->setState(new ApprovedState());
+$approvedCount = $approvedPackage->getStateCount();
 
-$stmtRejected = $conn->prepare("SELECT COUNT(*) FROM packages WHERE status = 'rejected'");
-$stmtRejected->execute();
-$rejectedCount = $stmtRejected->fetchColumn();
+$rejectedPackage = new Package();
+$rejectedPackage->setState(new RejectedState());
+$rejectedCount = $rejectedPackage->getStateCount();
 ?>
 
 <!DOCTYPE html>

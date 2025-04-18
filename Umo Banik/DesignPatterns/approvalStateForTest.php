@@ -1,12 +1,14 @@
 <?php
+
+//State Interface - Serves as a common contract for all concrete state implementations.
 interface PackageState {
     public function approve($package);
     public function reject($package);
-    public function getPendingCount();
+    public function getCount(); 
     public function getStateName();
 }
 
-// PendingState.php
+//Concrete State
 class PendingState implements PackageState {
     public function approve($package) {
         $package->setState(new ApprovedState());
@@ -18,8 +20,7 @@ class PendingState implements PackageState {
         return true;
     }
     
-    public function getPendingCount() {
-        // Connect to DB and count pending packages
+    public function getCount() {
         $db = Database::getInstance();
         $conn = $db->getConnection();
         $stmt = $conn->prepare("SELECT COUNT(*) FROM packages WHERE status = 'pending'");
@@ -32,20 +33,23 @@ class PendingState implements PackageState {
     }
 }
 
-// ApprovedState.php
+//Concrete State
 class ApprovedState implements PackageState {
     public function approve($package) {
-        // Package is already approved
         return false;
     }
     
     public function reject($package) {
-       // $package->setState(new RejectedState());
+        // $package->setState(new RejectedState());
         return false;
     }
     
-    public function getPendingCount() {
-        return 0;
+    public function getCount() {
+        $db = Database::getInstance();
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM packages WHERE status = 'approved'");
+        $stmt->execute();
+        return $stmt->fetchColumn();
     }
     
     public function getStateName() {
@@ -53,7 +57,7 @@ class ApprovedState implements PackageState {
     }
 }
 
-// RejectedState.php
+//Concrete State
 class RejectedState implements PackageState {
     public function approve($package) {
         $package->setState(new ApprovedState());
@@ -61,12 +65,15 @@ class RejectedState implements PackageState {
     }
     
     public function reject($package) {
-        // Package is already rejected
         return false;
     }
     
-    public function getPendingCount() {
-        return 0;
+    public function getCount() {
+        $db = Database::getInstance();
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM packages WHERE status = 'rejected'");
+        $stmt->execute();
+        return $stmt->fetchColumn();
     }
     
     public function getStateName() {
@@ -75,6 +82,7 @@ class RejectedState implements PackageState {
 }
 
 
+//Context - Acts as the primary class that interacts with the clients
 class Package {
     private $packageId;
     private $packageName;
@@ -91,12 +99,10 @@ class Package {
         }
     }
     
-    // Add the getId method
     public function getId() {
         return $this->packageId;
     }
     
-    // Add the getPackageInfo method
     public function getPackageInfo($packageId) {
         $stmt = $this->conn->prepare("SELECT p.*, u.name as creator_name 
                                      FROM packages p 
@@ -131,14 +137,13 @@ class Package {
     public function setState(PackageState $state) {
         $this->state = $state;
         
-        // Update the package status in the database
         $stmt = $this->conn->prepare("UPDATE packages SET status = ? WHERE package_id = ?");
         $stmt->execute([$state->getStateName(), $this->packageId]);
     }
     
     public function approve() {
         if ($this->state->approve($this)) {
-            // Notify the package creator that their package was approved
+            // Notifying the package creator that their package was approved
             $this->notifyCreator('approved');
             return true;
         }
@@ -147,11 +152,11 @@ class Package {
     
     public function reject($feedback = '') {
         if ($this->state->reject($this)) {
-            // Update the database with rejection feedback
+            // Updating the database with rejection feedback
             $stmt = $this->conn->prepare("UPDATE packages SET rejection_feedback = ? WHERE package_id = ?");
             $stmt->execute([$feedback, $this->packageId]);
             
-            // Notify the creator that their package was rejected with feedback
+            // Notifying the creator that their package was rejected with feedback
             $this->notifyCreator('rejected', $feedback);
             return true;
         }
@@ -179,8 +184,8 @@ class Package {
         }
     }
     
-    public function getPendingCount() {
-        return $this->state->getPendingCount();
+    public function getStateCount() {
+        return $this->state->getCount();
     }
     
     public function getStateName() {

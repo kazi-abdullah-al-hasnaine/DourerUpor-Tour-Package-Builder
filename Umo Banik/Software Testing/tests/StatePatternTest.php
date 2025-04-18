@@ -1,8 +1,8 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-require_once 'C:\xampp\htdocs\DourerUpor-Tour-Package-Builder\Shadhin-experiment\db_connection\db.php';
-require_once 'C:\xampp\htdocs\DourerUpor-Tour-Package-Builder\Shadhin-experiment\DesignPatterns\approvalState.php';
+require_once 'db_connection\db.php';
+require_once 'DesignPatterns\approvalState.php';
 
 class StatePatternTest extends TestCase
 {
@@ -25,23 +25,32 @@ class StatePatternTest extends TestCase
 
     public function testInitialStateIsPending()
     {
-        echo "Running test: testInitialStateIsPending\n"; // Debugging
+        echo "Running test: testInitialStateIsPending\n";
         $package = new Package($this->packageId);
         $state = $package->getStateName();
-        echo "Initial State: $state\n"; // Debugging
+        echo "Initial State: $state\n";
         $this->assertEquals('pending', $state);
+        
+        // Test the count for pending state
+        $count = $package->getStateCount();
+        echo "Initial Pending Count: $count\n";
+        $this->assertEquals(1, $count);
     }
 
     public function testApproveChangesStateToApproved()
     {
-        echo "Running test: testApproveChangesStateToApproved\n"; // Debugging
+        echo "Running test: testApproveChangesStateToApproved\n";
         $package = new Package($this->packageId);
         $package->approve();
         $state = $package->getStateName();
-        echo "Current State after approve: $state\n"; // Debugging
+        echo "Current State after approve: $state\n";
         $this->assertEquals('approved', $state);
+        
+        // Test the count for approved state
+        $count = $package->getStateCount();
+        echo "Approved Count: $count\n";
+        $this->assertEquals(1, $count);
     }
-
     public function testRejectAfterApprovalFails()
     {
         echo "Running test: testRejectAfterApprovalFails\n"; // Debugging
@@ -58,13 +67,24 @@ class StatePatternTest extends TestCase
         $this->assertEquals('approved', $state); // And stay 'approved'
     }
 
-    public function testPendingCountIsZeroAfterApproval()
+    public function testStateCountAfterStateChange()
     {
-        echo "Running test: testPendingCountIsZeroAfterApproval\n"; // Debugging
+        echo "Running test: testStateCountAfterStateChange\n";
         $package = new Package($this->packageId);
+        
+        // Get initial pending count
+        $initialCount = $package->getStateCount();
+        echo "Initial Count in Pending State: $initialCount\n";
+        
+        // Approve package
         $package->approve();
-        $pendingCount = $package->getPendingCount();
-        echo "Pending Count: $pendingCount\n"; // Debugging
-        $this->assertEquals(0, $pendingCount);
+        
+        // Get count in approved state
+        $approvedCount = $package->getStateCount();
+        echo "Count in Approved State: $approvedCount\n";
+        
+        // Assert counts
+        $this->assertEquals(0, $initialCount - 1); // One less in pending
+        $this->assertEquals(1, $approvedCount); // One in approved
     }
 }
