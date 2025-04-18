@@ -177,14 +177,17 @@ h1 i, h2 i {
 }
 
 /* Packages Container */
-.packages-container {
+.packages-container, .dest-container {
   background-color: var(--secondary);
   border-radius: 10px;
   box-shadow: var(--shadow);
   padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-bottom: 20px;
 }
 
-.package-card {
+.package-card, .dest-card{
   background-color: var(--white);
   border-radius: 10px;
   margin-bottom: 20px;
@@ -192,7 +195,7 @@ h1 i, h2 i {
   transition: transform 0.3s ease;
 }
 
-.package-header {
+.package-header, .dest-header {
   background-color: var(--blue);
   padding: 15px;
   display: flex;
@@ -239,7 +242,7 @@ h1 i, h2 i {
   color: var(--white);
 }
 
-.package-content {
+.package-content, .dest-content {
   padding: 15px;
   display: grid;
   grid-template-columns: 200px 1fr;
@@ -542,77 +545,3 @@ h1 i, h2 i {
 }
 
 
-/* Destination Form Styling */
-
-.dest-container {
-  background-color: var(--secondary);
-  border-radius: 10px;
-  box-shadow: var(--shadow);
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-  margin-bottom: 20px;
-}
-
-.dest-card {
-  background-color: var(--white);
-  border-radius: 10px;
-  margin-bottom: 20px;
-  overflow: visible;
-  transition: transform 0.3s ease;
-}
-
-.dest-header {
-  background-color: var(--blue);
-  padding: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dest-content {
-  padding: 15px;
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 20px;
-}
-
-
-.destination-form-container {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.destination-form-container h2 {
-  margin-bottom: 20px;
-}
-
-.destination-form-container .package-card {
-  background-color: var(--white);
-  border-radius: 10px;
-  box-shadow: var(--shadow);
-  margin-bottom: 20px;
-  width: 100%;
-}
-
-.destination-form-container .form-group {
-  margin-bottom: 15px;
-}
-
-.destination-form-container label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-
-.destination-form-container .search-box,
-.destination-form-container .dropdown {
-  width: 100%;
-  max-width: none;
-}
-
-.destination-form-container button {
-  width: 100%;
-  margin-top: 20px;
-}
