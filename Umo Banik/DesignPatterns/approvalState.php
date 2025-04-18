@@ -3,9 +3,11 @@
 //State Interface - Serves as a common contract for all concrete state implementations.
 interface PackageState {
     public function approve($package);
-    public function reject($package);
+    public function reject($package, $feedback = '');
+    public function setPending($package);
     public function getCount(); 
     public function getStateName();
+    public function updateStatus($packageId, $conn);
 }
 
 //Concrete State
@@ -15,9 +17,14 @@ class PendingState implements PackageState {
         return true;
     }
     
-    public function reject($package) {
+    public function reject($package, $feedback = '') {
         $package->setState(new RejectedState());
+        $package->setRejectionFeedback($feedback);
         return true;
+    }
+    
+    public function setPending($package) {
+        return false;
     }
     
     public function getCount() {
@@ -31,17 +38,30 @@ class PendingState implements PackageState {
     public function getStateName() {
         return 'pending';
     }
+    
+    public function updateStatus($packageId, $conn) {
+        $stmt = $conn->prepare("UPDATE packages SET status = ? WHERE package_id = ?");
+        $stmt->execute(['pending', $packageId]);
+        return true;
+    }
 }
 
 //Concrete State
 class ApprovedState implements PackageState {
     public function approve($package) {
+        // Already in approved state, nothing to do
         return false;
     }
     
-    public function reject($package) {
-        // $package->setState(new RejectedState());
+    public function reject($package, $feedback = '') {
+        //$package->setState(new RejectedState());
+        //$package->setRejectionFeedback($feedback);
         return false;
+    }
+    
+    public function setPending($package) {
+        $package->setState(new PendingState());
+        return true;
     }
     
     public function getCount() {
@@ -55,6 +75,12 @@ class ApprovedState implements PackageState {
     public function getStateName() {
         return 'approved';
     }
+    
+    public function updateStatus($packageId, $conn) {
+        $stmt = $conn->prepare("UPDATE packages SET status = ? WHERE package_id = ?");
+        $stmt->execute(['approved', $packageId]);
+        return true;
+    }
 }
 
 //Concrete State
@@ -64,8 +90,13 @@ class RejectedState implements PackageState {
         return true;
     }
     
-    public function reject($package) {
+    public function reject($package, $feedback = '') {
         return false;
+    }
+    
+    public function setPending($package) {
+        $package->setState(new PendingState());
+        return true;
     }
     
     public function getCount() {
@@ -78,6 +109,12 @@ class RejectedState implements PackageState {
     
     public function getStateName() {
         return 'rejected';
+    }
+    
+    public function updateStatus($packageId, $conn) {
+        $stmt = $conn->prepare("UPDATE packages SET status = ? WHERE package_id = ?");
+        $stmt->execute(['rejected', $packageId]);
+        return true;
     }
 }
 
@@ -136,9 +173,17 @@ class Package {
     
     public function setState(PackageState $state) {
         $this->state = $state;
-        
-        $stmt = $this->conn->prepare("UPDATE packages SET status = ? WHERE package_id = ?");
-        $stmt->execute([$state->getStateName(), $this->packageId]);
+    
+        if ($this->packageId) {
+            $this->state->updateStatus($this->packageId, $this->conn);
+        }
+    }
+    
+    public function setRejectionFeedback($feedback) {
+        if ($this->packageId && !empty($feedback)) {
+            $stmt = $this->conn->prepare("UPDATE packages SET rejection_feedback = ? WHERE package_id = ?");
+            $stmt->execute([$feedback, $this->packageId]);
+        }
     }
     
     public function approve() {
@@ -151,13 +196,18 @@ class Package {
     }
     
     public function reject($feedback = '') {
-        if ($this->state->reject($this)) {
-            // Updating the database with rejection feedback
-            $stmt = $this->conn->prepare("UPDATE packages SET rejection_feedback = ? WHERE package_id = ?");
-            $stmt->execute([$feedback, $this->packageId]);
-            
+        if ($this->state->reject($this, $feedback)) {
             // Notifying the creator that their package was rejected with feedback
             $this->notifyCreator('rejected', $feedback);
+            return true;
+        }
+        return false;
+    }
+    
+    public function setPending() {
+        if ($this->state->setPending($this)) {
+            // Notifying the creator that their package is pending
+            $this->notifyCreator('pending');
             return true;
         }
         return false;
@@ -174,6 +224,8 @@ class Package {
             
             if ($action === 'rejected' && !empty($feedback)) {
                 $message = "Your package '{$this->packageName}' has been {$action}. Feedback: {$feedback}";
+            } elseif ($action === 'pending') {
+                $message = "Your package '{$this->packageName}' is under review.";
             } else {
                 $message = "Your package '{$this->packageName}' has been {$action}.";
             }

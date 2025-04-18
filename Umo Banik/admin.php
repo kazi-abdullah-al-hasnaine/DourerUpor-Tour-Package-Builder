@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($action === 'approve') {
             if ($package->approve()) {
-                // Notifying followers that package has been approval
+                // Notifying followers that package has been approved
                 $packageInfo = $package->getPackageInfo($packageId);
                 $message = "Package '{$packageInfo['package_name']}' has been approved and is now available!";
                 $packageSubject->notify($packageId, $message);
@@ -58,13 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $packageSubject->notify($packageId, $message);
             }
         } elseif ($action === 'pending') {
-            // Change state back to pending
-            $package->setState(new PendingState());
-            
-            // Notifying followers about pending status
-            $packageInfo = $package->getPackageInfo($packageId);
-            $message = "Package '{$packageInfo['package_name']}' is under review.";
-            $packageSubject->notify($packageId, $message);
+            if ($package->setPending()) {
+                // Notifying followers about pending status
+                $packageInfo = $package->getPackageInfo($packageId);
+                $message = "Package '{$packageInfo['package_name']}' is under review.";
+                $packageSubject->notify($packageId, $message);
+            }
         }
         
         // Redirect to avoid form resubmission
@@ -72,6 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
+
+// Rest of the admin.php code remains the same
+// ..
 
 // Determine which view to show
 $currentView = $_GET['view'] ?? 'pending';
@@ -134,6 +136,7 @@ $approvedCount = $approvedPackage->getStateCount();
 $rejectedPackage = new Package();
 $rejectedPackage->setState(new RejectedState());
 $rejectedCount = $rejectedPackage->getStateCount();
+
 ?>
 
 <!DOCTYPE html>
