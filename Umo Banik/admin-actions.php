@@ -2,7 +2,7 @@
 session_start();
 // Check if user is admin
 if(!isset($_SESSION['admin'])) {
-    header('Location: index.php');
+    header('Location: admin-login.php');
     exit();
 }
 
@@ -17,7 +17,6 @@ if(isset($_POST['dest-button'])) {
     $destCost = isset($_POST['destCost']) ? (float)$_POST['destCost'] : 0;
     $destCountry = isset($_POST['destCountry']) ? trim($_POST['destCountry']) : 'Bangladesh';
     
-    // Check if destination already exists
     $checkQuery = "SELECT * FROM destinations WHERE name = :name";
     $check = $conn->prepare($checkQuery);
     $check->bindParam(':name', $destName, PDO::PARAM_STR);
@@ -25,8 +24,11 @@ if(isset($_POST['dest-button'])) {
     
     if($check->rowCount() > 0) {
         // Destination already exists
-        $_SESSION['admin_message'] = "Error: Destination '$destName' already exists.";
-        $_SESSION['admin_message_type'] = "error";
+        echo '<script>
+            alert("Error: Destination \'' . $destName . '\' already exists. Try adding another destination!!");
+            window.location.href = "admin.php";
+        </script>';
+        exit();
     } else {
         // Add new destination
         $insertQuery = "INSERT INTO destinations (name, country, type, cost) 
@@ -38,14 +40,18 @@ if(isset($_POST['dest-button'])) {
         $insert->bindParam(':cost', $destCost, PDO::PARAM_STR);
         
         if($insert->execute()) {
-            $_SESSION['admin_message'] = "Destination '$destName' added successfully!";
-            $_SESSION['admin_message_type'] = "success";
+            echo '<script>
+                alert("Destination \'' . $destName . '\' added successfully!");
+                window.location.href = "admin.php";
+            </script>';
+            exit();
         } else {
-            $_SESSION['admin_message'] = "Error: Failed to add destination.";
-            $_SESSION['admin_message_type'] = "error";
+            echo '<script>
+                alert("Error: Failed to add destination.");
+                window.location.href = "admin.php";
+            </script>';
+            exit();
         }
     }
     
-    header('Location: admin.php');
-    exit();
 }

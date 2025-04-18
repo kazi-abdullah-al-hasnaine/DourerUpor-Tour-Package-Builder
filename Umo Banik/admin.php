@@ -1,6 +1,11 @@
 <?php
 session_start();
-$_SESSION['admin'] = 'admin';
+
+if(!isset($_SESSION['admin'])) {
+    header('Location: admin-login.php');
+    exit();
+}
+
 if(isset($_SESSION['email']) || isset($_SESSION['user_id'])) {
     unset($_SESSION['email']);
     unset($_SESSION['user_id']);
@@ -12,6 +17,16 @@ $conn = $db->getConnection();
 
 include_once('DesignPatterns/approvalState.php');
 include_once('DesignPatterns/PackageObserver.php'); 
+
+if(isset($_GET['logout'])) {
+    // Clear all session variables
+    session_unset();
+    // Destroy the session
+    session_destroy();
+    // Redirect to login page
+    header('Location: admin-login.php');
+    exit();
+}
 
 //from observer design pattern for notification
 $packageSubject = PackageSubject::getInstance();
@@ -135,16 +150,24 @@ $rejectedCount = $stmtRejected->fetchColumn();
 </head>
 <body>
     <div class="admin-container">
-        <?php if(isset($_SESSION['admin_message'])): ?>
-        <div class="alert alert-<?php echo $_SESSION['admin_message_type']; ?>">
-            <?php 
-                echo $_SESSION['admin_message']; 
-                unset($_SESSION['admin_message']);
-                unset($_SESSION['admin_message_type']);
-            ?>
+    <div class="admin-header">
+        <div class="header-title">
+            <h1><i class="bi bi-person-workspace"></i> Admin Dashboard</h1>
         </div>
+        <div class="admin-actions">
+            <a href="admin.php?logout=true" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </div>
+    
+    <?php if(isset($_SESSION['admin_message'])): ?>
+    <div class="alert alert-<?php echo $_SESSION['admin_message_type']; ?>">
+        <?php 
+            echo $_SESSION['admin_message']; 
+            unset($_SESSION['admin_message']);
+            unset($_SESSION['admin_message_type']);
+        ?>
+    </div>
         <?php endif; ?>
-        <h1><i class="bi bi-person-workspace"></i> Admin Dashboard</h1>
         
         <div class="admin-stats">
             <div class="stat-card">
