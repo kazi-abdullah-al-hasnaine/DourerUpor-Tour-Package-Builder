@@ -4,7 +4,7 @@
 interface PackageState {
     public function approve($package);
     public function reject($package);
-    public function getPendingCount();
+    public function getCount(); 
     public function getStateName();
 }
 
@@ -20,7 +20,7 @@ class PendingState implements PackageState {
         return true;
     }
     
-    public function getPendingCount() {
+    public function getCount() {
         $db = Database::getInstance();
         $conn = $db->getConnection();
         $stmt = $conn->prepare("SELECT COUNT(*) FROM packages WHERE status = 'pending'");
@@ -44,8 +44,12 @@ class ApprovedState implements PackageState {
         return false;
     }
     
-    public function getPendingCount() {
-        return 0;
+    public function getCount() {
+        $db = Database::getInstance();
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM packages WHERE status = 'approved'");
+        $stmt->execute();
+        return $stmt->fetchColumn();
     }
     
     public function getStateName() {
@@ -64,8 +68,12 @@ class RejectedState implements PackageState {
         return false;
     }
     
-    public function getPendingCount() {
-        return 0;
+    public function getCount() {
+        $db = Database::getInstance();
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM packages WHERE status = 'rejected'");
+        $stmt->execute();
+        return $stmt->fetchColumn();
     }
     
     public function getStateName() {
@@ -176,8 +184,8 @@ class Package {
         }
     }
     
-    public function getPendingCount() {
-        return $this->state->getPendingCount();
+    public function getStateCount() {
+        return $this->state->getCount();
     }
     
     public function getStateName() {

@@ -57,14 +57,4 @@ class StatePatternTest extends TestCase
         $this->assertFalse($result); // We expect it to fail 
         $this->assertEquals('approved', $state); // And stay 'approved'
     }
-
-    public function testPendingCountIsZeroAfterApproval()
-    {
-        echo "Running test: testPendingCountIsZeroAfterApproval\n"; // Debugging
-        $package = new Package($this->packageId);
-        $package->approve();
-        $pendingCount = $package->getPendingCount();
-        echo "Pending Count: $pendingCount\n"; // Debugging
-        $this->assertEquals(0, $pendingCount);
-    }
 }
