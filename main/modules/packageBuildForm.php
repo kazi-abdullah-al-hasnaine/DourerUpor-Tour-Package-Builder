@@ -74,10 +74,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $builder = new TourPackageBuilder();
-    $director = new PackageDirector($builder);
 
-    if ($mode === 'full') {
+
+
+
+    $builder = new TourPackageBuilder();  //creating an object of the TourPackageBuilder class
+    $director = new PackageDirector($builder);  //object is stored in the variable $builder
+
+    if ($mode === 'full')  //These lines collect form inputs submitted by the user.
+     {
         $destinationIds = $_POST['destinations'] ?? [];
         $moneySaved = $_POST['money_saved'] ?? [];
         $dayCount = $_POST['day_count'] ?? [];
@@ -85,7 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $transportType = $_POST['transport_type'] ?? [];
         $transportCost = $_POST['transport_cost'] ?? [];
 
-        if (!empty($destinationIds)) {
+        if (!empty($destinationIds)) //This block gets destination names from the database.
+        {  
             $placeholders = implode(',', array_fill(0, count($destinationIds), '?'));
             $stmt = $conn->prepare("SELECT destination_id, name FROM destinations WHERE destination_id IN ($placeholders)");
             $stmt->execute($destinationIds);
@@ -116,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$packageId]);
             
             // Notify followers about the update
-            $packageSubject = PackageSubject::getInstance();
+            $packageSubject = PackageSubject::getInstance();  //Calls the getInstance() method of the PackageSubject class.
             $packageSubject->loadFollowersAsObservers($packageId, $conn);
             $packageSubject->notify($packageId, "Package '{$packageName}' has been updated and you will be notified when it's available again!");
         } else {
