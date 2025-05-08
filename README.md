@@ -1,7 +1,7 @@
 # DourerUpor-Tour-Package-Builder
 
 ## Overview
-DourerUpor is a tour package builder platform designed to help users explore, build, and share travel packages. The project incorporates multiple design patterns to ensure scalability, maintainability, and efficiency. It also supports multiple login systems (Normal, Google, and GitHub) for user convenience. The platform is built with PHP, leveraging modern design principles and efficient database interactions.
+DourerUpor is a tour package builder platform designed to help users explore, build, and share travel packages. The project incorporates multiple design patterns to ensure scalability, maintainability, and efficiency. It also supports multiple login systems for user convenience. The platform is built with PHP, leveraging modern design principles and efficient database interactions.
 
 ---
 
